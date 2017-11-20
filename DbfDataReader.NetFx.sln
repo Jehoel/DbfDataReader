@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27004.2009
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DbfDataReader.NetFx", "src\DbfDataReader\DbfDataReader.NetFx.csproj", "{86834EA5-07E5-4F4D-BE2D-B10F59E7F9C8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DbfDataReader.NetFx.Tests", "test\DbfDataReader.Tests\DbfDataReader.NetFx.Tests.csproj", "{B44A6608-F540-42F2-A45A-0D53536793E2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{86834EA5-07E5-4F4D-BE2D-B10F59E7F9C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86834EA5-07E5-4F4D-BE2D-B10F59E7F9C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86834EA5-07E5-4F4D-BE2D-B10F59E7F9C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86834EA5-07E5-4F4D-BE2D-B10F59E7F9C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B44A6608-F540-42F2-A45A-0D53536793E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B44A6608-F540-42F2-A45A-0D53536793E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B44A6608-F540-42F2-A45A-0D53536793E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B44A6608-F540-42F2-A45A-0D53536793E2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4B8BBCCD-3860-4FEE-ADE6-1E56FFB9D72C}
+	EndGlobalSection
+EndGlobal
