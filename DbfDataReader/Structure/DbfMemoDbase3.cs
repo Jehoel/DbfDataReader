@@ -3,40 +3,39 @@ using System.Text;
 
 namespace DbfDataReader
 {
-    public class DbfMemoDbase3 : DbfMemo
+    public class Dbase3MemoFile : DbfMemoFile
     {
-        public DbfMemoDbase3(string path) : base(path)
+        public Dbase3MemoFile(string fileName) : base(fileName)
         {
         }
 
-        public DbfMemoDbase3(string path, Encoding encoding) : base(path, encoding)
+        public Dbase3MemoFile(string fileName, Encoding encoding) : base( fileName, encoding )
         {
         }
 
-        public DbfMemoDbase3(Stream stream, Encoding encoding) : base(stream, encoding)
+        public Dbase3MemoFile(Stream stream, Encoding encoding) : base(stream, encoding)
         {
         }
+
+        private static readonly char[] _trailingWhitespaceChars = new char[] { '\0', ' ' };
 
         public override string BuildMemo(long startBlock)
         {
-            var offset = Offset(startBlock);
-            _binaryReader.BaseStream.Seek(offset, SeekOrigin.Begin);
+            long offset = this.GetOffset( startBlock );
+            
+            this.BinaryReader.BaseStream.Seek( offset, SeekOrigin.Begin );
 
-            var finished = false;
-            var stringBuilder = new StringBuilder();
+            StringBuilder stringBuilder = new StringBuilder();
 
+            string block;
             do
             {
-                var block = new string(_binaryReader.ReadChars(DefaultBlockSize));
-                block = block.TrimEnd('\0', ' ');
+                block = new string( this.BinaryReader.ReadChars( DefaultBlockSize ) ); // TODO: This could be optimized with a `ReadCharsExcludingTrailingNulls` method that still reads the specified number of chars but doesn't need a trim and extra copy.
+                block = block.TrimEnd( _trailingWhitespaceChars );
 
-                stringBuilder.Append(block);
+                stringBuilder.Append( block );
 
-                if (block.Length >= DefaultBlockSize)
-                {
-                    finished = true;
-                }
-            } while (!finished);
+            } while( block.Length < DefaultBlockSize ); // TODO: Is this right? continue reading if it read less bytes (after trimming!) than the block size?
 
             return stringBuilder.ToString();
         }

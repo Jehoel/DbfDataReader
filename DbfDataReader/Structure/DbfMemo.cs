@@ -4,84 +4,76 @@ using System.Text;
 
 namespace DbfDataReader
 {
-    public abstract class DbfMemo : Disposable
+    public abstract class DbfMemoFile : IDisposable
     {
-        protected const int BlockHeaderSize = 8;
+        protected const int BlockHeaderSize  =   8;
         protected const int DefaultBlockSize = 512;
 
-        protected BinaryReader _binaryReader;
+        protected BinaryReader BinaryReader { get; }
 
-        protected DbfMemo(string path)
-            : this(path, Encoding.UTF8)
+        public    String       FileName     { get; }
+
+        protected DbfMemoFile(string fileName)
+            : this( fileName, Encoding.UTF8 )
         {
         }
 
-        protected DbfMemo(string path, Encoding encoding)
+        protected DbfMemoFile(string fileName, Encoding encoding)
         {
-            if (!File.Exists(path))
+            if( !File.Exists( fileName ) )
             {
-                throw new FileNotFoundException();
+                throw new FileNotFoundException( "The xBase memo file does not exist.", fileName );
             }
 
-            Path = path;
-            CurrentEncoding = encoding;
+            this.FileName = fileName;
 
-            var stream = new FileStream(path, FileMode.Open);
-            _binaryReader = new BinaryReader(stream, encoding);
+            FileStream fileStream = new FileStream( fileName, FileMode.Open );
+            this.BinaryReader = new BinaryReader( fileStream, encoding );
         }
 
-        protected DbfMemo(Stream stream, Encoding encoding)
+        protected DbfMemoFile(Stream stream, Encoding encoding)
         {
-            Path = string.Empty;
-            CurrentEncoding = encoding;
-
-            _binaryReader = new BinaryReader(stream, encoding);
+            this.FileName = null;
+            this.BinaryReader = new BinaryReader( stream, encoding );
         }
-
-        public Encoding CurrentEncoding { get; set; }
 
         public void Close()
         {
-            Dispose(true);
+            this.Dispose();
         }
 
-        protected override void Dispose(bool disposing)
+        public void Dispose()
         {
-            try
-            {
-                if (!disposing) return;
-                _binaryReader?.Dispose();
-            }
-            finally
-            {
-                _binaryReader = null;
-            }
+            this.Dispose( disposing: true );
+            GC.SuppressFinalize( this );
         }
 
-        public virtual int BlockSize => DefaultBlockSize;
-
-        public string Path { get; set; }
-
+        protected virtual void Dispose(bool disposing)
+        {
+            if( disposing )
+            {
+                this.BinaryReader.Dispose();
+            }
+        }
+        
         public abstract string BuildMemo(long startBlock);
+
+        public virtual int BlockSize        => DefaultBlockSize;
+        public         int BlockContentSize => this.BlockSize + BlockHeaderSize;
 
         public string Get(long startBlock)
         {
-            return startBlock <= 0 ? string.Empty : BuildMemo(startBlock);
+            return startBlock <= 0 ? string.Empty : BuildMemo( startBlock );
         }
 
-        public long Offset(long startBlock)
+        public long GetOffset(long startBlock)
         {
-            return startBlock * BlockSize;
+            return startBlock * this.BlockSize;
         }
 
-        public int ContentSize(int memoSize)
+        public int GetContentSize(int memoSize)
         {
-            return (memoSize - BlockSize) + BlockHeaderSize;
-        }
-
-        public int BlockContentSize()
-        {
-            return BlockSize + BlockHeaderSize;
+            return ( memoSize - this.BlockSize ) + BlockHeaderSize;
         }
     }
 }

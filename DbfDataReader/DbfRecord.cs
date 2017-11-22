@@ -6,7 +6,16 @@ namespace DbfDataReader
 {
     public class DbfRecord
     {
-        private const byte EndOfFile = 0x1a;
+        private const byte EndOfFile = 0x1A;
+
+        public bool IsDeleted { get; private set; }
+
+        public IList<IDbfValue> Values { get; set; } // methinks just read .NET values into a single Object[] exposed via ReadOnlyCollection<Object>. I don't see any utility added by IDbValue.
+
+        private DbfRecord()
+        {
+
+        }
 
         public DbfRecord(DbfTable dbfTable)
         {
@@ -19,7 +28,7 @@ namespace DbfDataReader
             }
         }
 
-        private static IDbfValue CreateDbfValue(DbfColumn dbfColumn, DbfMemo memo)
+        private static IDbfValue CreateDbfValue(DbfColumn dbfColumn, DbfMemoFile memo)
         {
             IDbfValue value;
 
@@ -100,9 +109,7 @@ namespace DbfDataReader
             }
         }
 
-        public bool IsDeleted { get; private set; }
-
-        public IList<IDbfValue> Values { get; set; }
+       
 
         public object GetValue(int ordinal)
         {

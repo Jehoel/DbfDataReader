@@ -80,7 +80,7 @@ namespace DbfDataReader
 
         public BinaryReader BinaryReader { get; private set; }
 
-        public DbfMemo Memo { get; private set; }
+        public DbfMemoFile Memo { get; private set; }
 
         public IList<DbfColumn> Columns { get; }
 
@@ -107,9 +107,9 @@ namespace DbfDataReader
             return string.Empty;
         }
 
-        public DbfMemo CreateMemo(string path)
+        public DbfMemoFile CreateMemo(string path)
         {
-            DbfMemo memo;
+            DbfMemoFile memo;
 
             if (Header.IsFoxPro)
             {

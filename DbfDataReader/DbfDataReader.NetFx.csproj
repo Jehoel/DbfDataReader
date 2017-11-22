@@ -19,6 +19,8 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -34,6 +36,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Overby.Extensions.AsyncBinaryReaderWriter, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Overby.Extensions.AsyncBinaryReaderWriter.1.0.35\lib\net461\Overby.Extensions.AsyncBinaryReaderWriter.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
@@ -43,33 +48,33 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DbfColumn.cs" />
-    <Compile Include="DbfColumnType.cs" />
+    <Compile Include="Structure\DbfColumn.cs" />
+    <Compile Include="Structure\DbfColumnType.cs" />
     <Compile Include="DbfDataReader.cs" />
     <Compile Include="DbfFileFormatException.cs" />
-    <Compile Include="DbfHeader.cs" />
-    <Compile Include="DbfMemo.cs" />
-    <Compile Include="DbfMemoDbase3.cs" />
-    <Compile Include="DbfMemoDbase4.cs" />
-    <Compile Include="DbfMemoFoxPro.cs" />
+    <Compile Include="Structure\DbfHeader.cs" />
+    <Compile Include="Structure\DbfMemo.cs" />
+    <Compile Include="Structure\DbfMemoDbase3.cs" />
+    <Compile Include="Structure\DbfMemoDbase4.cs" />
+    <Compile Include="Structure\DbfMemoFoxPro.cs" />
     <Compile Include="DbfRecord.cs" />
     <Compile Include="DbfTable.cs" />
-    <Compile Include="DbfValue.cs" />
-    <Compile Include="DbfValueBoolean.cs" />
-    <Compile Include="DbfValueCurrency.cs" />
-    <Compile Include="DbfValueDate.cs" />
-    <Compile Include="DbfValueDateTime.cs" />
-    <Compile Include="DbfValueDecimal.cs" />
-    <Compile Include="DbfValueDouble.cs" />
-    <Compile Include="DbfValueFloat.cs" />
-    <Compile Include="DbfValueInt.cs" />
-    <Compile Include="DbfValueLong.cs" />
-    <Compile Include="DbfValueMemo.cs" />
-    <Compile Include="DbfValueNull.cs" />
-    <Compile Include="DbfValueString.cs" />
-    <Compile Include="Disposable.cs" />
+    <Compile Include="Structure\DbfValue.cs" />
+    <Compile Include="Structure\DbfValueBoolean.cs" />
+    <Compile Include="Structure\DbfValueCurrency.cs" />
+    <Compile Include="Structure\DbfValueDate.cs" />
+    <Compile Include="Structure\DbfValueDateTime.cs" />
+    <Compile Include="Structure\DbfValueDecimal.cs" />
+    <Compile Include="Structure\DbfValueDouble.cs" />
+    <Compile Include="Structure\DbfValueFloat.cs" />
+    <Compile Include="Structure\DbfValueInt.cs" />
+    <Compile Include="Structure\DbfValueLong.cs" />
+    <Compile Include="Structure\DbfValueMemo.cs" />
+    <Compile Include="Structure\DbfValueNull.cs" />
+    <Compile Include="Structure\DbfValueString.cs" />
     <Compile Include="IDbfValue.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

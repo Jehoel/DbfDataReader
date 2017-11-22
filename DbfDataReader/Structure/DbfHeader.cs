@@ -1,74 +1,98 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
+using Overby.Extensions.AsyncBinaryReaderWriter;
 
 namespace DbfDataReader
 {
+    /// <summary>Immutable DBF header record.</summary>
     public class DbfHeader
     {
-        private const int DbfHeaderSize = 32;
+        public byte     Version      { get; }
+        public DateTime UpdatedAt    { get; }
+        public long     RecordCount  { get; }
+        public int      HeaderLength { get; }
+        public int      RecordLength { get; }
 
-        public DbfHeader(BinaryReader binaryReader)
+        public DbfHeader(byte version, DateTime updatedAt, long recordCount, int headerLength, int recordLength)
         {
-            Read(binaryReader);
+            this.Version      = version;
+            this.UpdatedAt    = updatedAt;
+            this.RecordCount  = recordCount;
+            this.HeaderLength = headerLength;
+            this.RecordLength = recordLength;
         }
 
-        public int Version { get; private set; }
-
-        public DateTime UpdatedAt { get; private set; }
-        public int HeaderLength { get; private set; }
-        public int RecordLength { get; private set; }
-        public long RecordCount { get; private set; }
-
-        public void Read(BinaryReader binaryReader)
+        private static DbfHeader Create(byte version, byte updatedYear, byte updatedMonth, byte updatedDay, long recordCount, int headerLength, int recordLength)
         {
-            Version = binaryReader.ReadByte();
+            return new DbfHeader(
+                version,
+                new DateTime( 1900 + updatedYear, updatedMonth, updatedDay ),
+                recordCount,
+                headerLength,
+                recordLength
+            );
+        }
 
-            var year = binaryReader.ReadByte();
-            var month = binaryReader.ReadByte();
-            var day = binaryReader.ReadByte();
+        public static DbfHeader Read(BinaryReader reader)
+        {
+            byte   version      = reader.ReadByte();
+            byte   dateYear     = reader.ReadByte();
+            byte   dateMonth    = reader.ReadByte();
+            byte   dateDay      = reader.ReadByte();
+            uint   recordCount  = reader.ReadUInt32();
+            ushort headerLength = reader.ReadUInt16();
+            ushort recordLength = reader.ReadUInt16();
 
-            UpdatedAt = new DateTime(year + 1900, month, day);
+            reader.ReadBytes(20); // skip the reserved bytes
 
-            RecordCount = binaryReader.ReadUInt32();
-            HeaderLength = binaryReader.ReadUInt16();
-            RecordLength = binaryReader.ReadUInt16();
+            return Create( version, dateYear, dateMonth, dateDay, recordCount, headerLength, recordLength );
+        }
 
-            // skip the reserved bytes
-            binaryReader.ReadBytes(20);
+        [CLSCompliant(false)]
+        public static async Task<DbfHeader> ReadAsync(AsyncBinaryReader reader)
+        {
+            byte   version      = await reader.ReadByteAsync()  .ConfigureAwait(false);
+            byte   dateYear     = await reader.ReadByteAsync()  .ConfigureAwait(false);
+            byte   dateMonth    = await reader.ReadByteAsync()  .ConfigureAwait(false);
+            byte   dateDay      = await reader.ReadByteAsync()  .ConfigureAwait(false);
+            uint   recordCount  = await reader.ReadUInt32Async().ConfigureAwait(false);;
+            ushort headerLength = await reader.ReadUInt16Async().ConfigureAwait(false);;
+            ushort recordLength = await reader.ReadUInt16Async().ConfigureAwait(false);;
+
+            await reader.ReadBytesAsync(20).ConfigureAwait(false); // skip the reserved bytes
+
+            return Create( version, dateYear, dateMonth, dateDay, recordCount, headerLength, recordLength );
         }
 
         public string VersionDescription
         {
             get
             {
-                string description;
-                switch (Version)
+                switch( this.Version )
                 {
-                    case 0x02: description = "FoxPro"; break;
-                    case 0x03: description = "dBase III without memo file"; break;
-                    case 0x04: description = "dBase IV without memo file"; break;
-                    case 0x05: description = "dBase V without memo file"; break;
-                    case 0x07: description = "Visual Objects 1.x"; break;
-                    case 0x30: description = "Visual FoxPro"; break;
-                    case 0x31: description = "Visual FoxPro with AutoIncrement field"; break;
-                    case 0x43: description = "dBASE IV SQL table files, no memo"; break;
-                    case 0x63: description = "dBASE IV SQL system files, no memo"; break;
-                    case 0x7b: description = "dBase IV with memo file"; break;
-                    case 0x83: description = "dBase III with memo file"; break;
-                    case 0x87: description = "Visual Objects 1.x with memo file"; break;
-                    case 0x8b: description = "dBase IV with memo file"; break;
-                    case 0x8e: description = "dBase IV with SQL table"; break;
-                    case 0xcb: description = "dBASE IV SQL table files, with memo"; break;
-                    case 0xf5: description = "FoxPro with memo file"; break;
-                    case 0xfb: description = "FoxPro without memo file"; break;
-                    default:
-                        description = "Unknown";
-                        break;
+                    case 0x02: return "FoxPro";
+                    case 0x03: return "dBase III without memo file";
+                    case 0x04: return "dBase IV without memo file";
+                    case 0x05: return "dBase V without memo file";
+                    case 0x07: return "Visual Objects 1.x";
+                    case 0x30: return "Visual FoxPro";
+                    case 0x31: return "Visual FoxPro with AutoIncrement field";
+                    case 0x43: return "dBASE IV SQL table files, no memo";
+                    case 0x63: return "dBASE IV SQL system files, no memo";
+                    case 0x7b: return "dBase IV with memo file";
+                    case 0x83: return "dBase III with memo file";
+                    case 0x87: return "Visual Objects 1.x with memo file";
+                    case 0x8b: return "dBase IV with memo file";
+                    case 0x8e: return "dBase IV with SQL table";
+                    case 0xcb: return "dBASE IV SQL table files, with memo";
+                    case 0xf5: return "FoxPro with memo file";
+                    case 0xfb: return "FoxPro without memo file";
+                    default  : return "Unknown";
                 }
-                return description;
             }
         }
 
-        public bool IsFoxPro => Version == 0x30 || Version == 0x31 || Version == 0xf5 || Version == 0xfb;
+        public bool IsFoxPro => this.Version == 0x30 || this.Version == 0x31 || this.Version == 0xF5 || this.Version == 0xFB;
     }
 }
