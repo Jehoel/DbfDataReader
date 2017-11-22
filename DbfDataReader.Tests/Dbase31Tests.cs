@@ -6,7 +6,7 @@ namespace DbfDataReader.Tests
     [Collection("dbase_31")]
     public class Dbase31Tests : DbaseTests
     {
-        private const string Dbase31FixturePath = "../../../../fixtures/dbase_31.dbf";
+        private const string Dbase31FixturePath = "dbase_31.dbf";
 
         public Dbase31Tests() : base(Dbase31FixturePath)
         {
@@ -39,13 +39,13 @@ namespace DbfDataReader.Tests
         [Fact]
         public void Should_have_the_correct_column_schema()
         {
-            ValidateColumnSchema("../../../../fixtures/dbase_31_summary.txt");
+            ValidateColumnSchema("dbase_31_summary.txt");
         }
 
         [Fact]
         public void Should_have_correct_row_values()
         {
-            ValidateRowValues("../../../../fixtures/dbase_31.csv");
+            ValidateRowValues("dbase_31.csv");
         }
     }
 }

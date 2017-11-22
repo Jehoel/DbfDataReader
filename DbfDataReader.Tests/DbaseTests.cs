@@ -7,16 +7,29 @@ namespace DbfDataReader.Tests
 {
     public abstract class DbaseTests : IDisposable
     {
+        public static String GetFullPath(String testDataFile)
+        {
+            // current directory is `DbfDataReader.Tests\bin\Debug`
+			// test data is         `DbfDataReader.Tests\TestData`
+
+			DirectoryInfo current = new DirectoryInfo( Environment.CurrentDirectory ); // or `AppDomain.CurrentDomain.BaseDirectory`.
+			DirectoryInfo testData = new DirectoryInfo( Path.Combine( current.Parent.Parent.FullName, "TestData" ) );
+			testData.Exists.ShouldBeTrue();
+
+            String resolved = Path.Combine( testData.FullName, testDataFile );
+            return resolved;
+        }
+
         protected DbaseTests(string fixturePath)
         {
-            FixturePath = fixturePath;
-            DbfTable = new DbfTable(fixturePath);
+            this.FixturePath = GetFullPath( fixturePath );
+            this.DbfTable = new DbfTable( this.FixturePath );
         }
 
         public void Dispose()
         {
-            DbfTable.Dispose();
-            DbfTable = null;
+            this.DbfTable.Dispose();
+            this.DbfTable = null;
         }
 
         public string FixturePath { get; }
@@ -27,6 +40,8 @@ namespace DbfDataReader.Tests
 
         protected void ValidateColumnSchema(string path)
         {
+            path = GetFullPath( path );
+
             using (var stream = new FileStream(path, FileMode.Open))
             using (var summaryFile = new StreamReader(stream))
             {
@@ -59,6 +74,8 @@ namespace DbfDataReader.Tests
 
         protected void ValidateRowValues(string path)
         {
+            path = GetFullPath( path );
+
             var dbfRecord = new DbfRecord(DbfTable);
 
             using (var textReader = File.OpenText(path))
