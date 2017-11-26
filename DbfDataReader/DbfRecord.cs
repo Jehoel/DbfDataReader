@@ -8,20 +8,20 @@ namespace DbfDataReader
     public enum DbfRecordStatus : byte
     {
         Unknown = 0,
+        EOF     = 0x1A,
         Deleted = 0x2A,
         Valid   = 0x20
     }
 
     public class DbfRecord : DbDataRecord
     {
-        public const Byte EndOfFile     = 0x1A; // TODO: Move to reader.
-
         public DbfTable        Table  { get; }
+        public Int64           Offset { get; }
         public DbfRecordStatus Status { get; }
 
         private readonly Object[] values;
 
-        public DbfRecord(DbfTable table, DbfRecordStatus status, Object[] values)
+        public DbfRecord(DbfTable table, Int64 offset, DbfRecordStatus status, Object[] values)
         {
             // NOTE: It might be an idea to create a shallow-copy of `values` in case the consumer mutates the array after construction.
 
@@ -30,6 +30,7 @@ namespace DbfDataReader
             if( values == null ) throw new ArgumentNullException(nameof(values));
 
             this.Table  = table;
+            this.Offset = offset;
             this.Status = status;
             this.values = values;
 

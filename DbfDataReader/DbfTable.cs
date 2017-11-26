@@ -4,7 +4,7 @@ using System.Text;
 
 namespace DbfDataReader
 {
-    public class DbfTable : Disposable
+    public class DbfTable : IDisposable
     {
         private const byte Terminator = 0x0d;
         private const int HeaderMetaDataSize = 33;
@@ -82,7 +82,7 @@ namespace DbfDataReader
 
         public DbfMemoFile Memo { get; private set; }
 
-        public IList<DbfColumn> Columns { get; }
+        public IList<DbfColumn> Columns { get; } // TODO: ReadOnlyCollection
 
         public IDictionary<string,DbfColumn> ColumnsByName { get; }
 
