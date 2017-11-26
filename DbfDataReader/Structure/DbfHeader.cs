@@ -8,13 +8,15 @@ namespace DbfDataReader
     /// <summary>Immutable DBF header record.</summary>
     public class DbfHeader
     {
-        public byte     Version      { get; }
+        public Byte     Version      { get; }
         public DateTime UpdatedAt    { get; }
-        public long     RecordCount  { get; }
-        public int      HeaderLength { get; }
-        public int      RecordLength { get; }
+        public Int64    RecordCount  { get; }
+        public Int32    HeaderLength { get; }
+        public Int32    RecordLength { get; } // Value = (Real record length) + 1 Byte for the DbfRecordStatus.
 
-        public DbfHeader(byte version, DateTime updatedAt, long recordCount, int headerLength, int recordLength)
+        public Int32    RecordDataLength => this.RecordLength - 1;
+
+        public DbfHeader(Byte version, DateTime updatedAt, Int64 recordCount, Int32 headerLength, Int32 recordLength)
         {
             this.Version      = version;
             this.UpdatedAt    = updatedAt;
@@ -23,7 +25,7 @@ namespace DbfDataReader
             this.RecordLength = recordLength;
         }
 
-        private static DbfHeader Create(byte version, byte updatedYear, byte updatedMonth, byte updatedDay, long recordCount, int headerLength, int recordLength)
+        private static DbfHeader Create(Byte version, Byte updatedYear, Byte updatedMonth, Byte updatedDay, Int64 recordCount, Int32 headerLength, Int32 recordLength)
         {
             return new DbfHeader(
                 version,
@@ -36,15 +38,15 @@ namespace DbfDataReader
 
         public static DbfHeader Read(BinaryReader reader)
         {
-            byte   version      = reader.ReadByte();
-            byte   dateYear     = reader.ReadByte();
-            byte   dateMonth    = reader.ReadByte();
-            byte   dateDay      = reader.ReadByte();
+            Byte   version      = reader.ReadByte();
+            Byte   dateYear     = reader.ReadByte();
+            Byte   dateMonth    = reader.ReadByte();
+            Byte   dateDay      = reader.ReadByte();
             uint   recordCount  = reader.ReadUInt32();
             ushort headerLength = reader.ReadUInt16();
             ushort recordLength = reader.ReadUInt16();
 
-            reader.ReadBytes(20); // skip the reserved bytes
+            reader.ReadBytes(20); // skip the reserved Bytes
 
             return Create( version, dateYear, dateMonth, dateDay, recordCount, headerLength, recordLength );
         }
@@ -52,15 +54,15 @@ namespace DbfDataReader
         [CLSCompliant(false)]
         public static async Task<DbfHeader> ReadAsync(AsyncBinaryReader reader)
         {
-            byte   version      = await reader.ReadByteAsync()  .ConfigureAwait(false);
-            byte   dateYear     = await reader.ReadByteAsync()  .ConfigureAwait(false);
-            byte   dateMonth    = await reader.ReadByteAsync()  .ConfigureAwait(false);
-            byte   dateDay      = await reader.ReadByteAsync()  .ConfigureAwait(false);
+            Byte   version      = await reader.ReadByteAsync()  .ConfigureAwait(false);
+            Byte   dateYear     = await reader.ReadByteAsync()  .ConfigureAwait(false);
+            Byte   dateMonth    = await reader.ReadByteAsync()  .ConfigureAwait(false);
+            Byte   dateDay      = await reader.ReadByteAsync()  .ConfigureAwait(false);
             uint   recordCount  = await reader.ReadUInt32Async().ConfigureAwait(false);;
             ushort headerLength = await reader.ReadUInt16Async().ConfigureAwait(false);;
             ushort recordLength = await reader.ReadUInt16Async().ConfigureAwait(false);;
 
-            await reader.ReadBytesAsync(20).ConfigureAwait(false); // skip the reserved bytes
+            await reader.ReadBytesAsync(20).ConfigureAwait(false); // skip the reserved Bytes
 
             return Create( version, dateYear, dateMonth, dateDay, recordCount, headerLength, recordLength );
         }

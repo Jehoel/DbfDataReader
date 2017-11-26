@@ -8,13 +8,13 @@ namespace DbfDataReader
     /// <summary>Immutable DBF column definition record.</summary>
     public class DbfColumn
     {
-        public int           Index        { get; }
-        public string        Name         { get; }
+        public Int32         Index        { get; }
+        public String        Name         { get; }
         public DbfColumnType ColumnType   { get; }
-        public int           Length       { get; }
-        public int           DecimalCount { get; }
+        public Byte          Length       { get; }
+        public Byte          DecimalCount { get; }
 
-        public DbfColumn(int index, string name, DbfColumnType columnType, int length, int decimalCount)
+        public DbfColumn(Int32 index, String name, DbfColumnType columnType, Byte length, Byte decimalCount)
         {
             this.Index        = index;
             this.Name         = name;
@@ -23,7 +23,7 @@ namespace DbfDataReader
             this.DecimalCount = decimalCount;
         }
 
-        private static DbfColumn Create(int index, char[] nameChars, byte columnType, int length, int decimalCount)
+        private static DbfColumn Create(Int32 index, char[] nameChars, Byte columnType, Byte length, Byte decimalCount)
         {
             return new DbfColumn(
                 index,
@@ -37,24 +37,24 @@ namespace DbfDataReader
         [CLSCompliant(false)]
         public static async Task<DbfColumn> ReadAsync(AsyncBinaryReader reader, int index)
         {
-            char[]        name             = await reader.ReadCharsAsync(11).ConfigureAwait(false);
-            byte          columnType       = await reader.ReadByteAsync()   .ConfigureAwait(false);
-            uint          fieldDataAddress = await reader.ReadUInt32Async() .ConfigureAwait(false); // ignore field data address
-            int           length           = await reader.ReadByteAsync()   .ConfigureAwait(false);
-            int           decimalCount     = await reader.ReadByteAsync()   .ConfigureAwait(false);
-            byte[]        reserved         = await reader.ReadBytesAsync(14).ConfigureAwait(false); // skip the reserved bytes
+            Char[]        name             = await reader.ReadCharsAsync(11).ConfigureAwait(false);
+            Byte          columnType       = await reader.ReadByteAsync()   .ConfigureAwait(false);
+            UInt32        fieldDataAddress = await reader.ReadUInt32Async() .ConfigureAwait(false); // ignore field data address
+            Byte          length           = await reader.ReadByteAsync()   .ConfigureAwait(false);
+            Byte          decimalCount     = await reader.ReadByteAsync()   .ConfigureAwait(false);
+            Byte[]        reserved         = await reader.ReadBytesAsync(14).ConfigureAwait(false); // skip the reserved bytes
 
             return Create( index, name, columnType, length, decimalCount );
         }
 
         public static DbfColumn Read(BinaryReader reader, int index)
         {
-            char[]        name             = reader.ReadChars(11);
-            byte          columnType       = reader.ReadByte();
-            uint          fieldDataAddress = reader.ReadUInt32(); // ignore field data address
-            int           length           = reader.ReadByte();
-            int           decimalCount     = reader.ReadByte();
-            byte[]        reserved         = reader.ReadBytes(14); // skip the reserved bytes
+            Char[]        name             = reader.ReadChars(11);
+            Byte          columnType       = reader.ReadByte();
+            UInt32        fieldDataAddress = reader.ReadUInt32(); // ignore field data address
+            Byte          length           = reader.ReadByte();
+            Byte          decimalCount     = reader.ReadByte();
+            Byte[]        reserved         = reader.ReadBytes(14); // skip the reserved bytes
 
             return Create( index, name, columnType, length, decimalCount );
         }

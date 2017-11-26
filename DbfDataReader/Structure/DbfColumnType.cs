@@ -3,15 +3,18 @@
     public enum DbfColumnType
     {
         Number = 'N',
-        Signedlong = 'I',
+        SignedLong = 'I',
         Float = 'F',
         Currency = 'Y',
         Date = 'D',
         DateTime = 'T',
         Boolean = 'L',
         Memo = 'M',
-        Double = 'B',
+        DoubleOrBinary = 'B',
         General = 'G',
-        Character = 'C'
+        Character = 'C',
+        Double = 'O',
+        Timestamp = '@',
+        Autoincrement = '+'
     }
 }
