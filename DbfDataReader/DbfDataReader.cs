@@ -5,8 +5,13 @@ using System.Text;
 
 namespace DbfDataReader
 {
-    public class DbfDataReader : DbDataReader
+    public sealed class DbfDataReader : DbDataReader
     {
+        internal DbfDataReader()
+        {
+
+        }
+
         public DbfDataReader(string path)
         {
             DbfTable = new DbfTable(path);
