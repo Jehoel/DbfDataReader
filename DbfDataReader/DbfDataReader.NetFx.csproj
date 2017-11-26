@@ -51,9 +51,11 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Readers\AsyncDbfDataReader.cs" />
+    <Compile Include="Readers\SyncDbfDataReader.cs" />
     <Compile Include="Structure\DbfColumn.cs" />
     <Compile Include="Structure\DbfColumnType.cs" />
-    <Compile Include="DbfDataReader.cs" />
+    <Compile Include="Readers\DbfDataReader.cs" />
     <Compile Include="DbfFileFormatException.cs" />
     <Compile Include="Structure\DbfHeader.cs" />
     <Compile Include="Structure\DbfMemo.cs" />
