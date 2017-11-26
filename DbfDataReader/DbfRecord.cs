@@ -23,6 +23,8 @@ namespace DbfDataReader
 
         public DbfRecord(DbfTable table, DbfRecordStatus status, Object[] values)
         {
+            // NOTE: It might be an idea to create a shallow-copy of `values` in case the consumer mutates the array after construction.
+
             if( table == null ) throw new ArgumentNullException(nameof(table));
             if( status != DbfRecordStatus.Deleted && status != DbfRecordStatus.Valid ) throw new ArgumentOutOfRangeException(nameof(status), status, "Value must be either " + nameof(DbfRecordStatus.Valid) + " or " + nameof(DbfRecordStatus.Deleted) + ".");
             if( values == null ) throw new ArgumentNullException(nameof(values));
@@ -31,8 +33,10 @@ namespace DbfDataReader
             this.Status = status;
             this.values = values;
 
+#if DEBUG
             // Validate values:
             if( values.Any( o => Object.ReferenceEquals( o, null ) ) ) throw new ArgumentException("Values arrays cannot contain CLR null values. Use DBNull.Value to represent NULL values.", nameof(values));
+#endif
 
             this.Values = new ReadOnlyCollection<Object>( this.values );
         }

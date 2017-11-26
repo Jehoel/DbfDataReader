@@ -1,233 +1,198 @@
 ﻿using System;
 using System.Collections;
 using System.Data.Common;
+using System.IO;
 using System.Text;
+using System.Security.AccessControl;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace DbfDataReader
 {
     public sealed class DbfDataReader : DbDataReader
     {
-        internal DbfDataReader()
-        {
+        private readonly FileStream stream;
+        private          Boolean    atEof;
+        private          Boolean    isDisposed;
 
+        public DbfTable Table { get; }
+
+        public Encoding Encoding { get; }
+
+        private const FileOptions _fileOptions = FileOptions.Asynchronous;
+
+        internal DbfDataReader(DbfTable table, String path, Boolean randomAccess, Encoding encoding)
+        {
+            FileOptions fileOptions = FileOptions.Asynchronous;
+            if( randomAccess ) fileOptions |= FileOptions.RandomAccess;
+            else               fileOptions |= FileOptions.SequentialScan;
+
+            ///
+
+            this.Table    = table;
+            this.Encoding = encoding;
+
+            this.stream = new FileStream( path, FileMode.Open, FileSystemRights.ReadData, FileShare.ReadWrite, 4096, fileOptions );
         }
 
-        public DbfDataReader(string path)
+        private DbfRecord current;
+
+        public DbfRecord Current
         {
-            DbfTable = new DbfTable(path);
-            DbfRecord = new DbfRecord(DbfTable);
+            get
+            {
+                if( this.current == null ) throw new InvalidOperationException("No " + nameof(DbfRecord) + " has been read by this " + nameof(DbfDataReader) + " instance.");
+                return this.current;
+            }
         }
 
-        public DbfDataReader(string path, Encoding encoding)
-        {
-            DbfTable = new DbfTable(path, encoding);
-            DbfRecord = new DbfRecord(DbfTable);
-        }
+        #region DbDataReader
 
-        public DbfTable DbfTable { get; private set; }
-
-        public DbfRecord DbfRecord { get; private set; }
-
-#if NETSTANDARD1_6
-        public void Close()
-#else
         public override void Close()
-#endif
         {
-            try
+            // `DbDataReader.Close()` is a NOOP.
+            // `DbDataReader.Dispose(Boolean disposing)` calls Close()...
+            
+            this.stream.Dispose();
+            this.isDisposed = true;
+        }
+
+        #region IDataRecord / Get typed values
+
+        public override Boolean GetBoolean(Int32 ordinal)
+        {
+            return this.Current.GetBoolean( ordinal );
+        }
+
+        public override Byte GetByte(Int32 ordinal)
+        {
+           return this.Current.GetByte( ordinal );
+        }
+
+        public override Int64 GetBytes(Int32 ordinal, Int64 dataOffset, Byte[] buffer, Int32 bufferOffset, Int32 length)
+        {
+            return this.Current.GetBytes( ordinal, dataOffset, buffer, bufferOffset, length );
+        }
+
+        public override Char GetChar(Int32 ordinal)
+        {
+            return this.Current.GetChar( ordinal );
+        }
+
+        public override Int64 GetChars(Int32 ordinal, Int64 dataOffset, Char[] buffer, Int32 bufferOffset, Int32 length)
+        {
+           return this.Current.GetChars( ordinal, dataOffset, buffer, bufferOffset, length );
+        }
+
+        public override DateTime GetDateTime(Int32 ordinal)
+        {
+            return this.Current.GetDateTime( ordinal );
+        }
+
+        public override Decimal GetDecimal(Int32 ordinal)
+        {
+            return this.Current.GetDecimal( ordinal );
+        }
+
+        public override Double GetDouble(Int32 ordinal)
+        {
+            return this.Current.GetDouble( ordinal );
+        }
+
+        public override Single GetFloat(Int32 ordinal)
+        {
+            return this.Current.GetFloat( ordinal );
+        }
+
+        public override Guid GetGuid(Int32 ordinal)
+        {
+            return this.Current.GetGuid( ordinal );
+        }
+
+        public override Int16 GetInt16(Int32 ordinal)
+        {
+            return this.Current.GetInt16( ordinal );
+        }
+
+        public override Int32 GetInt32(Int32 ordinal)
+        {
+            return this.Current.GetInt32( ordinal );
+        }
+
+        public override Int64 GetInt64(Int32 ordinal)
+        {
+            return this.Current.GetInt64( ordinal );
+        }
+
+        public override String GetString(Int32 ordinal)
+        {
+            return this.Current.GetString( ordinal );
+        }
+
+        #endregion
+
+        public override Int32 Depth => 0; // always zero depth.
+
+        public override Int32 FieldCount => this.Current.FieldCount;
+
+        /// <summary>Returns false if the current table file contains no records or if this reader has reached EOF.</summary>
+        public override Boolean HasRows
+        {
+            get
             {
-                DbfTable.Close();
-            }
-            finally
-            {
-                DbfTable = null;
-                DbfRecord = null;
-            }
-        }
+                if( this.IsClosed ) throw new InvalidOperationException("This " + nameof(DbfDataReader) + " is closed.");
 
-#if NETSTANDARD1_6
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                Close();
+                if( this.Table.Header.RecordCount == 0 ) return false;
+                
+                if( this.atEof ) return false;
+
+                return true;
             }
         }
-#endif
 
-        public DbfRecord ReadRecord()
-        {
-            return DbfTable.ReadRecord();
-        }
+        public override Boolean IsClosed => this.isDisposed;
 
-        public T GetNullableValue<T>(int ordinal) where T : struct
-        {
-            var value = DbfRecord.GetValue(ordinal);
-            var nullableValue = value as T?;
-            return nullableValue.Value;
-        }
+        public override Int32 RecordsAffected => 0; // we're read-only
 
-        public override bool GetBoolean(int ordinal)
-        {
-            return GetNullableValue<bool>(ordinal);
-        }
+        public override Object this[String name] => this.Current[ name ];
 
-        public override byte GetByte(int ordinal)
-        {
-            return GetNullableValue<byte>(ordinal);
-        }
+        public override Object this[Int32 ordinal] => this.Current[ ordinal ];
 
-        public override long GetBytes(int ordinal, long dataOffset, byte[] buffer, int bufferOffset, int length)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public override char GetChar(int ordinal)
-        {
-            return GetNullableValue<char>(ordinal);
-        }
-
-        public override long GetChars(int ordinal, long dataOffset, char[] buffer, int bufferOffset, int length)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public override string GetDataTypeName(int ordinal)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public override DateTime GetDateTime(int ordinal)
-        {
-            return GetNullableValue<DateTime>(ordinal);
-        }
-
-        public override decimal GetDecimal(int ordinal)
-        {
-            return GetNullableValue<decimal>(ordinal);
-        }
-
-        public override double GetDouble(int ordinal)
-        {
-            return GetNullableValue<double>(ordinal);
-        }
+        public override String GetDataTypeName(Int32 ordinal) => this.Current.GetDataTypeName( ordinal );
 
         public override IEnumerator GetEnumerator()
         {
-            throw new System.NotImplementedException();
+            return new DbEnumerator( this, closeReader: false );
         }
 
-        public override bool NextResult()
+        public override Type GetFieldType(Int32 ordinal) => this.Current.GetFieldType( ordinal );
+
+        public override String GetName(Int32 ordinal) => this.Current.GetName( ordinal );
+
+        public override Int32 GetOrdinal(String name) => this.Current.GetOrdinal( name );
+
+        public override Object GetValue(Int32 ordinal) => this.Current.GetValue( ordinal );
+
+        public override Int32 GetValues(Object[] values) => this.Current.GetValues( values );
+
+        public override Boolean IsDBNull(Int32 ordinal) => this.Current.IsDBNull( ordinal );
+
+        public override Boolean NextResult()
         {
+            // xBase does not have a concept of batched results.
             return false;
         }
 
-        public override bool Read()
+        #endregion
+
+        public override Boolean Read()
         {
             return DbfTable.Read(DbfRecord);
         }
 
-        public override int Depth
+        public async Task<Boolean> ReadAsync()
         {
-            get { throw new NotImplementedException(); }
-        }
-
-        public override bool IsClosed => DbfTable.IsClosed;
-
-        public override int RecordsAffected
-        {
-            get { throw new NotImplementedException(); }
-        }
-
-        public override object this[string name]
-        {
-            get 
-            {
-                var ordinal = GetOrdinal(name);
-                return GetValue(ordinal); 
-            }
-        }
-
-        public override object this[int ordinal]
-        {
-            get { return GetValue(ordinal); }
-        }
-
-        public override int FieldCount => DbfTable.Columns.Count;
-
-        public override bool HasRows => DbfTable.Header.RecordCount > 0;
-
-        public override bool IsDBNull(int ordinal)
-        {
-            var value = GetValue(ordinal);
-            return value == null;
-        }
-
-        public override int GetValues(object[] values)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public override object GetValue(int ordinal)
-        {
-            return DbfRecord.GetValue(ordinal);
-        }
-
-        public override string GetString(int ordinal)
-        {
-            return DbfRecord.GetValue<string>(ordinal);
-        }
-
-        public override int GetOrdinal(string name)
-        {
-            int ordinal = 0;
-
-            foreach (var dbfColumn in DbfTable.Columns)
-            {
-                if (dbfColumn.Name == name)
-                {
-                    return ordinal;
-                }
-                ordinal++;
-            }
-
-            return -1;
-        }
-
-        public override string GetName(int ordinal)
-        {
-            var dbfColumn = DbfTable.Columns[ordinal]; 
-            return dbfColumn.Name;
-        }
-
-        public override long GetInt64(int ordinal)
-        {
-            return GetNullableValue<long>(ordinal);
-        }
-
-        public override int GetInt32(int ordinal)
-        {
-            return GetNullableValue<int>(ordinal);
-        }
-
-        public override short GetInt16(int ordinal)
-        {
-            return GetNullableValue<short>(ordinal);
-        }
-
-        public override Guid GetGuid(int ordinal)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public override float GetFloat(int ordinal)
-        {
-            return GetNullableValue<float>(ordinal);
-        }
-
-        public override Type GetFieldType(int ordinal)
-        {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
     }
 }
