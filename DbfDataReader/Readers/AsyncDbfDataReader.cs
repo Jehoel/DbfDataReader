@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Security.AccessControl;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,15 +16,13 @@ namespace DbfDataReader
 
         private readonly DbfDataReaderOptions options;
 
-        public override Encoding Encoding { get; }
+        public override Encoding TextEncoding { get; }
 
         /// <param name="ignoreEof">If true, then a </param>
-        internal AsyncDbfDataReader(DbfTable table, String fileName, Boolean randomAccess, Encoding encoding, DbfDataReaderOptions options)
+        internal AsyncDbfDataReader(DbfTable table, Boolean randomAccess, Encoding encoding, DbfDataReaderOptions options)
             : base( table )
         {
-            FileOptions fileOptions = FileOptions.Asynchronous | ( randomAccess ? FileOptions.RandomAccess : FileOptions.SequentialScan );
-
-            FileStream stream = new FileStream( fileName, FileMode.Open, FileSystemRights.ReadData, FileShare.ReadWrite, 4096, fileOptions );
+            FileStream stream = Utility.OpenFileForReading( table.File.FullName, randomAccess, async: true );
             if( !stream.CanRead || !stream.CanSeek )
             {
                 stream.Dispose();
@@ -39,7 +36,7 @@ namespace DbfDataReader
 
             this.binaryReader = new AsyncBinaryReader( this.fileStream, Encoding.ASCII, leaveOpen: true );
 
-            this.Encoding = encoding;
+            this.TextEncoding = encoding;
 
             this.options = options;
         }
@@ -75,6 +72,13 @@ namespace DbfDataReader
         public override Task<Boolean> ReadAsync(CancellationToken cancellationToken)
         {
             throw new NotImplementedException("TODO!");
+        }
+
+        public override Boolean Seek(Int32 recordIndex)
+        {
+            Int64 desiredOffset = this.GetRecordFileOffset( recordIndex );
+            Int64 currentOffset = this.binaryReader.BaseStream.Seek( desiredOffset, SeekOrigin.Begin );
+            return desiredOffset == currentOffset;
         }
     }
 }

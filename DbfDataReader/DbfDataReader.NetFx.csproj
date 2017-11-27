@@ -64,21 +64,22 @@
     <Compile Include="Structure\DbfMemoFoxPro.cs" />
     <Compile Include="DbfRecord.cs" />
     <Compile Include="DbfTable.cs" />
-    <Compile Include="Structure\DbfValue.cs" />
-    <Compile Include="Structure\DbfValueBoolean.cs" />
-    <Compile Include="Structure\DbfValueCurrency.cs" />
-    <Compile Include="Structure\DbfValueDate.cs" />
-    <Compile Include="Structure\DbfValueDateTime.cs" />
-    <Compile Include="Structure\DbfValueDecimal.cs" />
-    <Compile Include="Structure\DbfValueDouble.cs" />
-    <Compile Include="Structure\DbfValueFloat.cs" />
-    <Compile Include="Structure\DbfValueInt.cs" />
-    <Compile Include="Structure\DbfValueLong.cs" />
-    <Compile Include="Structure\DbfValueMemo.cs" />
-    <Compile Include="Structure\DbfValueNull.cs" />
-    <Compile Include="Structure\DbfValueString.cs" />
+    <None Include="Structure\DbfValue.cs" />
+    <None Include="Structure\DbfValueBoolean.cs" />
+    <None Include="Structure\DbfValueCurrency.cs" />
+    <None Include="Structure\DbfValueDate.cs" />
+    <None Include="Structure\DbfValueDateTime.cs" />
+    <None Include="Structure\DbfValueDecimal.cs" />
+    <None Include="Structure\DbfValueDouble.cs" />
+    <None Include="Structure\DbfValueFloat.cs" />
+    <None Include="Structure\DbfValueInt.cs" />
+    <None Include="Structure\DbfValueLong.cs" />
+    <None Include="Structure\DbfValueMemo.cs" />
+    <None Include="Structure\DbfValueNull.cs" />
+    <None Include="Structure\DbfValueString.cs" />
     <Compile Include="IDbfValue.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utility.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSHARP.Targets" />
   <ProjectExtensions>

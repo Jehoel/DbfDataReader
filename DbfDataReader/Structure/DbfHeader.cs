@@ -16,6 +16,8 @@ namespace DbfDataReader
 
         public Int32    RecordDataLength => this.RecordLength - 1;
 
+        public const Byte HeaderTerminator = 0x0D;
+
         public DbfHeader(Byte version, DateTime updatedAt, Int64 recordCount, Int32 headerLength, Int32 recordLength)
         {
             this.Version      = version;
@@ -67,7 +69,7 @@ namespace DbfDataReader
             return Create( version, dateYear, dateMonth, dateDay, recordCount, headerLength, recordLength );
         }
 
-        public string VersionDescription
+        public String VersionDescription
         {
             get
             {
@@ -95,6 +97,6 @@ namespace DbfDataReader
             }
         }
 
-        public bool IsFoxPro => this.Version == 0x30 || this.Version == 0x31 || this.Version == 0xF5 || this.Version == 0xFB;
+        public Boolean IsFoxPro => this.Version == 0x30 || this.Version == 0x31 || this.Version == 0xF5 || this.Version == 0xFB;
     }
 }

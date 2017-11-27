@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Security.AccessControl;
 using System.Text;
 
 namespace DbfDataReader
@@ -16,13 +15,13 @@ namespace DbfDataReader
 
         private readonly DbfDataReaderOptions options;
 
-        public override Encoding Encoding { get; }
+        public override Encoding TextEncoding { get; }
 
         /// <param name="ignoreEof">If true, then a </param>
-        internal SyncDbfDataReader(DbfTable table, String fileName, Boolean randomAccess, Encoding encoding, DbfDataReaderOptions options)
+        internal SyncDbfDataReader(DbfTable table, Boolean randomAccess, Encoding textEncoding, DbfDataReaderOptions options)
             : base( table )
         {
-            FileStream stream = new FileStream( fileName, FileMode.Open, FileSystemRights.ReadData, FileShare.ReadWrite, 4096, randomAccess ? FileOptions.RandomAccess : FileOptions.SequentialScan );
+            FileStream stream = Utility.OpenFileForReading( table.File.FullName, randomAccess, async: false );
             if( !stream.CanRead || !stream.CanSeek )
             {
                 stream.Dispose();
@@ -31,7 +30,7 @@ namespace DbfDataReader
 
             this.binaryReader = new BinaryReader( this.fileStream, Encoding.ASCII, leaveOpen: true );
 
-            this.Encoding = encoding;
+            this.TextEncoding = textEncoding;
 
             this.options = options;
         }
@@ -133,8 +132,6 @@ namespace DbfDataReader
             }
         }
 
-        
-
         private Boolean ReadRecord()
         {
             IList<DbfColumn> cols = this.Table.Columns;
@@ -196,7 +193,7 @@ namespace DbfDataReader
                     {
                         UInt16 length = (UInt16)(( column.DecimalCount << 8 ) | column.Length); // FoxPro stores the high-byte in DecimalCount
                         Byte[] text = this.binaryReader.ReadBytes( length );
-                        return this.Encoding.GetString( text );
+                        return this.TextEncoding.GetString( text );
                     }
                 case DbfColumnType.Currency:
                     {
@@ -230,29 +227,11 @@ namespace DbfDataReader
             return Encoding.ASCII.GetString( this.reusableBuffer, 0, bytesRead );
         }
 
-        private static Int32 GetDbfColumnTypeLength(DbfColumnType type, Int32 declaredLength)
+        public override Boolean Seek(Int32 recordIndex)
         {
-            // https://www.clicketyclick.dk/databases/xbase/format/data_types.html
-
-            switch( type )
-            {
-                case DbfColumnType.Boolean       : return 1;
-                case DbfColumnType.Character     : return declaredLength;
-                case DbfColumnType.Currency      : return declaredLength; // see original version of DbfValueCurrency.cs
-                case DbfColumnType.Date          : return 8;
-                case DbfColumnType.DateTime      : return 8;
-                case DbfColumnType.DoubleOrBinary: throw new NotImplementedException(); // if FoxPro then 8, else declaredLength...
-                case DbfColumnType.Float         : return 20;
-                case DbfColumnType.General       : throw new NotImplementedException();
-                case DbfColumnType.Memo          : return 10; // value is a pointer to a field in a memo file.
-                case DbfColumnType.Number        : return 20; // FoxPro and Clipper: 20 chars, 18 in dBase.
-                case DbfColumnType.SignedLong    : return 4;
-                case DbfColumnType.Autoincrement : return 4; // 'long' == 4
-                case DbfColumnType.Timestamp     : return 8;
-                case DbfColumnType.Double        : return 8;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(type));
-            }
+            Int64 desiredOffset = this.GetRecordFileOffset( recordIndex );
+            Int64 currentOffset = this.binaryReader.BaseStream.Seek( desiredOffset, SeekOrigin.Begin );
+            return desiredOffset == currentOffset;
         }
     }
 }

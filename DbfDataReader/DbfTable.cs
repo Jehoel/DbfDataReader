@@ -1,92 +1,114 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using Overby.Extensions.AsyncBinaryReaderWriter;
 
 namespace DbfDataReader
 {
-    public class DbfTable : IDisposable
+    public sealed class DbfTable
     {
         private const byte Terminator = 0x0d;
         private const int HeaderMetaDataSize = 33;
         private const int ColumnMetaDataSize = 32;
 
-        public DbfTable(string path)
-            : this(path, Encoding.UTF8)
+        private DbfTable(FileInfo file, DbfHeader header, IList<DbfColumn> columns, Encoding textEncoding)
         {
-            
+            this.File          = file;
+            this.Header        = header;
+            this.Columns       = new ReadOnlyCollection<DbfColumn>( columns );
+            this.ColumnsByName = columns.ToDictionary( c => c.Name );
+            this.TextEncoding  = textEncoding;
         }
 
-        public DbfTable(string path, Encoding encoding)
+        public FileInfo File { get; }
+
+        public DbfHeader                             Header  { get; }
+        public ReadOnlyCollection<DbfColumn>         Columns { get; }
+        public IReadOnlyDictionary<String,DbfColumn> ColumnsByName { get; }
+
+        public Encoding TextEncoding { get; }
+
+        public static DbfTable Open(String fileName) => Open( fileName, Encoding.ASCII );
+
+        public static DbfTable Open(String fileName, Encoding textEncoding)
         {
-            if (!File.Exists(path))
+            if( textEncoding == null ) throw new ArgumentNullException(nameof(textEncoding));
+
+            using( FileStream fs = Utility.OpenFileForReading( fileName, randomAccess: false, async: false ) )
+            using( BinaryReader reader = new BinaryReader( fs, Encoding.ASCII ) )
             {
-                throw new FileNotFoundException();
-            }
+                DbfHeader header = DbfHeader.Read( reader );
+                
+                List<DbfColumn> columns = new List<DbfColumn>();
+                DbfColumn lastColumn = null;
+                Int32 index = 0;
+                do
+                {
+                    lastColumn = DbfColumn.Read( reader, index );
+                    index++;
+                    columns.Add( lastColumn );
+                }
+                while( lastColumn != null );
 
-            Path = path;
-            CurrentEncoding = encoding;
+                /////
 
-            var stream = new FileStream(path, FileMode.Open);
-            BinaryReader = new BinaryReader(stream, encoding, false);
-
-            Header = new DbfHeader(BinaryReader);
-            Columns = ReadColumns(BinaryReader);
-            SkipToFirstRecord(BinaryReader);
-
-            var memoPath = MemoPath();
-            if (!string.IsNullOrEmpty(memoPath))
-            {
-                Memo = CreateMemo(memoPath);
-            }
-        }
-
-        public DbfTable(Stream stream, Encoding encoding)
-        {
-            Path = string.Empty;
-            CurrentEncoding = encoding;
-
-            BinaryReader = new BinaryReader(stream, encoding, true);
-
-            Header = new DbfHeader(BinaryReader);
-            Columns = ReadColumns(BinaryReader);
-            SkipToFirstRecord(BinaryReader);
-        }
-
-        public void Close()
-        {
-            Dispose(true);
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            try
-            {
-                if (!disposing) return;
-                BinaryReader?.Dispose();
-                Memo?.Dispose();
-            }
-            finally
-            {
-                BinaryReader = null;
-                Memo = null;
+                return new DbfTable( new FileInfo( fileName ), header, columns, textEncoding );
             }
         }
 
-        public string Path { get; }
+        public static Task<DbfTable> OpenAsync(String fileName) => OpenAsync( fileName, Encoding.ASCII );
 
-        public Encoding CurrentEncoding { get; set; }
+        public static async Task<DbfTable> OpenAsync(String fileName, Encoding textEncoding)
+        {
+            if( textEncoding == null ) throw new ArgumentNullException(nameof(textEncoding));
 
-        public DbfHeader Header { get; }
+            using( FileStream fs = Utility.OpenFileForReading( fileName, randomAccess: false, async: true ) )
+            using( AsyncBinaryReader reader = new AsyncBinaryReader( fs, Encoding.ASCII ) )
+            {
+                DbfHeader header = await DbfHeader.ReadAsync( reader ).ConfigureAwait(false);
+                
+                List<DbfColumn> columns = new List<DbfColumn>();
+                DbfColumn lastColumn = null;
+                Int32 index = 0;
+                do
+                {
+                    lastColumn = await DbfColumn.ReadAsync( reader, index ).ConfigureAwait(false);
+                    index++;
+                    columns.Add( lastColumn );
+                }
+                while( lastColumn != null );
 
-        public BinaryReader BinaryReader { get; private set; }
+                /////
 
-        public DbfMemoFile Memo { get; private set; }
+                return new DbfTable( new FileInfo( fileName ), header, columns, textEncoding );
+            }
+        }
 
-        public IList<DbfColumn> Columns { get; } // TODO: ReadOnlyCollection
+        public SyncDbfDataReader OpenDataReader(Boolean randomAccess) => this.OpenDataReader( randomAccess, DbfDataReaderOptions.None );
 
-        public IDictionary<string,DbfColumn> ColumnsByName { get; }
+        public SyncDbfDataReader OpenDataReader(Boolean randomAccess, DbfDataReaderOptions options)
+        {
+            SyncDbfDataReader reader = new SyncDbfDataReader( this, randomAccess, this.TextEncoding, options );
+            reader.Seek( 0 ); // Move to first record.
+            return reader;
+        }
+        
+        public AsyncDbfDataReader OpenDataReaderAsync(Boolean randomAccess) => this.OpenDataReaderAsync( randomAccess, DbfDataReaderOptions.None );
 
-        public bool IsClosed => BinaryReader != null;
+        public AsyncDbfDataReader OpenDataReaderAsync(Boolean randomAccess, DbfDataReaderOptions options)
+        {
+            AsyncDbfDataReader reader = new AsyncDbfDataReader( this, randomAccess, this.TextEncoding, options );
+            reader.Seek( 0 ); // Move to first record.
+            return reader;
+        }
+
+        #if MEMO_SUPPORT
+
+        public DbfMemoFile Memo { get; private set; } // replace with an OpenMemoFile, but we don't need memo support for now.
 
         public string MemoPath()
         {
@@ -132,42 +154,6 @@ namespace DbfDataReader
             return memo;
         }
 
-        public IList<DbfColumn> ReadColumns(BinaryReader binaryReader)
-        {
-            var columns = new List<DbfColumn>();
-
-            var index = 0;
-            while (binaryReader.PeekChar() != Terminator)
-            {
-                var column = new DbfColumn(binaryReader, index++);
-                columns.Add(column);
-            }
-
-            var terminator = binaryReader.ReadByte();
-            if (terminator != Terminator)
-            {
-                throw new DbfFileFormatException();
-            }
-
-            return columns;
-        }
-
-        public void SkipToFirstRecord(BinaryReader binaryReader)
-        {
-            var numBytesToSkip = Header.HeaderLength - (HeaderMetaDataSize + (ColumnMetaDataSize * Columns.Count));
-            BinaryReader.ReadBytes(numBytesToSkip);
-        }
-
-        public DbfRecord ReadRecord()
-        {
-            var dbfRecord = new DbfRecord(this);
-            dbfRecord.Read(BinaryReader);
-            return dbfRecord;
-        }
-
-        public bool Read(DbfRecord dbfRecord)
-        {
-            return dbfRecord.Read(BinaryReader);
-        }
+        #endif
     }
 }

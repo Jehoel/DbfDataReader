@@ -33,7 +33,7 @@ namespace DbfDataReader
 
         #region DbDataReader
 
-        #region IDataRecord / Get typed values
+        #region IDataRecord: Get typed values
 
         public override Boolean GetBoolean(Int32 ordinal)
         {
@@ -161,7 +161,7 @@ namespace DbfDataReader
 
         protected abstract Boolean EOF { get; }
 
-        public abstract Encoding Encoding { get; }
+        public abstract Encoding TextEncoding { get; }
 
         // DbDataReader already has a `public virtual Task<Boolean> ReadAsync(CancellatioinToken)` method that calls `this.Read()` synchronously.
         // So `SyncDbfDataReader` doesn't need to do anything.
@@ -172,6 +172,15 @@ namespace DbfDataReader
             Eof,
             Skipped
         }
+
+        protected Int64 GetRecordFileOffset(Int32 recordIndex)
+        {
+            Int64 offset = this.Table.Header.HeaderLength + (this.Table.Header.RecordLength * recordIndex);
+            return offset;
+        }
+
+        // There is no async Seek method, so this is shared by both implementations.
+        public abstract Boolean Seek(Int32 recordIndex);
     }
 
     [Flags]
