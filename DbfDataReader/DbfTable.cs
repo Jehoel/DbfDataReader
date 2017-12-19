@@ -97,8 +97,16 @@ namespace DbfDataReader
         public SyncDbfDataReader OpenDataReader(Boolean randomAccess, DbfDataReaderOptions options)
         {
             SyncDbfDataReader reader = new SyncDbfDataReader( this, randomAccess, this.TextEncoding, options );
-            reader.Seek( recordIndex: 0 ); // Move to first record.
-            return reader;
+            try
+            {
+                reader.Seek( recordIndex: 0 ); // Move to first record.
+                return reader;
+            }
+            catch
+            {
+                ((IDisposable)reader).Dispose();
+                throw;
+            }
         }
         
         public AsyncDbfDataReader OpenDataReaderAsync(Boolean randomAccess) => this.OpenDataReaderAsync( randomAccess, DbfDataReaderOptions.None );
@@ -106,8 +114,16 @@ namespace DbfDataReader
         public AsyncDbfDataReader OpenDataReaderAsync(Boolean randomAccess, DbfDataReaderOptions options)
         {
             AsyncDbfDataReader reader = new AsyncDbfDataReader( this, randomAccess, this.TextEncoding, options );
-            reader.Seek( recordIndex: 0 ); // Move to first record.
-            return reader;
+            try
+            {
+                reader.Seek( recordIndex: 0 ); // Move to first record.
+                return reader;
+            }
+            catch
+            {
+                ((IDisposable)reader).Dispose();
+                throw;
+            }
         }
 
         #if MEMO_SUPPORT
