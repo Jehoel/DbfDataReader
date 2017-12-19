@@ -158,9 +158,10 @@ namespace DbfDataReader
             return this.Table.Columns[i].Name;
         }
 
+        /// <summary>Existing DbDataReader implementations return the index of the first column with that name, in the case of multiple columns sharing the same name.</summary>
         public override Int32 GetOrdinal(String name)
         {
-            return this.Table.ColumnsByName[ name ].Index;
+            return this.Table.ColumnsByName[ name ].First().Index;
         }
 
         public override Object GetValue(Int32 i)

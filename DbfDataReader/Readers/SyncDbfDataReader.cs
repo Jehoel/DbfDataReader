@@ -78,6 +78,8 @@ namespace DbfDataReader
         {
             if( this.SetEOF() ) return DbfReadResult.Eof;
 
+            Int64 offset = this.binaryReader.BaseStream.Position;
+
             DbfRecordStatus recordStatus = (DbfRecordStatus)this.binaryReader.ReadByte();
             if( recordStatus == DbfRecordStatus.Deleted )
             {
@@ -124,7 +126,7 @@ namespace DbfDataReader
 
             //////////////////////
 
-            if( this.ReadRecord() )
+            if( this.ReadRecord( offset, recordStatus ) )
             {
                 return DbfReadResult.Read;
             }
@@ -134,7 +136,7 @@ namespace DbfDataReader
             }
         }
 
-        private Boolean ReadRecord()
+        private Boolean ReadRecord( Int64 offset, DbfRecordStatus recordStatus)
         {
             IList<DbfColumn> cols = this.Table.Columns;
 
@@ -152,11 +154,12 @@ namespace DbfDataReader
                 catch(EndOfStreamException)
                 {
                     this.SetEOF();
-                    // TODO: Set `this.Current` to a partial record?
+                    this.Current = null; // TODO: Set `this.Current` to a partial record?
                     return false;
                 }
             }
 
+            this.Current = new DbfRecord( this.Table, offset, recordStatus, values );
             return true;
         }
 
@@ -195,7 +198,11 @@ namespace DbfDataReader
                     {
                         UInt16 length = (UInt16)(( column.DecimalCount << 8 ) | column.Length); // FoxPro stores the high-byte in DecimalCount
                         Byte[] text = this.binaryReader.ReadBytes( length );
-                        return this.TextEncoding.GetString( text );
+
+                        String textStr = this.TextEncoding.GetString( text );
+                        String trimmed = textStr.TrimEnd( _textPaddingChars );
+
+                        return trimmed;
                     }
                 case DbfColumnType.Currency:
                     {
@@ -207,20 +214,79 @@ namespace DbfDataReader
                         DateTime value = DateTime.ParseExact( dateStr, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None );
                         return value;
                     }
-                case DbfColumnType.DateTime:
-                case DbfColumnType.Double:
-                case DbfColumnType.DoubleOrBinary:
-                case DbfColumnType.Float:
-                case DbfColumnType.General:
-                case DbfColumnType.Memo:
-                case DbfColumnType.Number:
-                case DbfColumnType.SignedLong:
                 case DbfColumnType.Timestamp:
+                case DbfColumnType.DateTime:
+                    {
+                        // bytes 0-3: date: little-endian 32-bit integer Julian day number.
+                        // bytes 4-7: time: milliseconds since midnight
+
+                        // Julian day number: days since some epoch, but the value 2299161 is 1582-10-15 on the Gregorian calendar (which is 1852-10-04 in Julian).
+
+                        Int32 days = this.binaryReader.ReadInt32();
+                        Int32 time = this.binaryReader.ReadInt32();
+
+                        Int32 daysSince2299161 = days - 2299161;
+                        if( daysSince2299161 < 0 ) throw new InvalidOperationException("Invalid dateTime value.");
+
+                        DateTime date = _julianDay2299161Local.AddDays( daysSince2299161 );
+                        DateTime dateTime = date.AddMilliseconds( time );
+                        return dateTime;
+                    }
+                case DbfColumnType.Double:
+                    {
+                        return this.binaryReader.ReadDouble();
+                    }
+                case DbfColumnType.DoubleOrBinary:
+                    {
+                        if( this.Table.Header.IsFoxPro )
+                        {
+                            // Int16
+                            return this.binaryReader.ReadInt16();
+                        }
+                        else if( this.Table.Header.Version == 5 ) // dBase V
+                        {
+                            // Binary
+                            throw new NotImplementedException();
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("This column type is not supported in this table file format.");
+                        }
+                    }
+                case DbfColumnType.Float:
+                    {
+                        String twentyDigits = this.ReadAsciiString( 20 );
+                        return Single.Parse( twentyDigits, NumberStyles.Any, CultureInfo.InvariantCulture );
+                    }
+                case DbfColumnType.General:
+                    {
+                        // Binary
+                        throw new NotImplementedException();
+                    }
+                case DbfColumnType.Memo:
+                     {
+                        // Binary
+                        throw new NotImplementedException();
+                    }
+                case DbfColumnType.Number:
+                    {
+                        if( column.Length > 20 ) throw new InvalidOperationException("Number columns cannot exceed 20 characters.");
+
+                        String value = this.ReadAsciiString( column.Length );
+                        if( Decimal.TryParse( value, NumberStyles.Any, CultureInfo.InvariantCulture, out Decimal parsed ) ) return parsed;
+                        else return DBNull.Value;
+                    }
+                case DbfColumnType.SignedLong:
+                    {
+                        // Int32
+                        return this.binaryReader.ReadInt32();
+                    }
                 default:
                     throw new NotImplementedException();
             }
         }
 
+        
         private readonly Byte[] reusableBuffer = new Byte[ 256 ];
 
         private String ReadAsciiString(Int32 length)
@@ -235,5 +301,10 @@ namespace DbfDataReader
             Int64 currentOffset = this.binaryReader.BaseStream.Seek( desiredOffset, SeekOrigin.Begin );
             return desiredOffset == currentOffset;
         }
+
+        private static readonly DateTime _julianDay2299161Local = new DateTime( 1582, 10, 15, 0, 0, 0, 0, DateTimeKind.Local );
+        private static readonly DateTime _julianDay2299161Utc   = new DateTime( 1582, 10, 15, 0, 0, 0, 0, DateTimeKind.Utc   );
+
+        private static readonly Char[] _textPaddingChars = new Char[] { '\0', ' ' };
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -7,6 +8,7 @@ using Overby.Extensions.AsyncBinaryReaderWriter;
 namespace DbfDataReader
 {
     /// <summary>Immutable DBF column definition record.</summary>
+    [DebuggerDisplay("Name={Name}, Index={Index}, Type={ColumnType}({Length})")]
     public class DbfColumn
     {
         public Int32         Index        { get; }

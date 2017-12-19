@@ -20,15 +20,19 @@ namespace DbfDataReader
             this.File          = file;
             this.Header        = header;
             this.Columns       = new ReadOnlyCollection<DbfColumn>( columns );
-            this.ColumnsByName = columns.ToDictionary( c => c.Name );
             this.TextEncoding  = textEncoding;
+
+            this.ColumnsByName = columns
+                .GroupBy( c => c.Name )
+                .Select( grp => new ReadOnlyCollection<DbfColumn>( grp.ToList() ) )
+                .ToDictionary( cols => cols.First().Name ); // xBase allows columns to share the same name, apparently.
         }
 
         public FileInfo File { get; }
 
         public DbfHeader                             Header  { get; }
         public ReadOnlyCollection<DbfColumn>         Columns { get; }
-        public IReadOnlyDictionary<String,DbfColumn> ColumnsByName { get; }
+        public IReadOnlyDictionary<String,ReadOnlyCollection<DbfColumn>> ColumnsByName { get; }
 
         public Encoding TextEncoding { get; }
 
@@ -50,7 +54,7 @@ namespace DbfDataReader
                 {
                     lastColumn = DbfColumn.Read( reader, index );
                     index++;
-                    columns.Add( lastColumn );
+                    if( lastColumn != null ) columns.Add( lastColumn );
                 }
                 while( lastColumn != null );
 

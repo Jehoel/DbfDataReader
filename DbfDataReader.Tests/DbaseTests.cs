@@ -1,7 +1,9 @@
 ﻿using CsvHelper;
 using Shouldly;
 using System;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 
 namespace DbfDataReader.Tests
 {
@@ -79,23 +81,33 @@ namespace DbfDataReader.Tests
             using( StreamReader textReader = File.OpenText(csvPath) )
             using( CsvParser csvParser = new CsvParser(textReader) )
             {
-                String[] columnNames = csvParser.Read();
+                String[] csvColumnNames = csvParser.Read();
+                Int32 csvDelta = csvColumnNames.Last() == "deleted" ? -1 : 0;
                 
                 Int32 row = 1;
                 while( dbfReader.Read() ) 
                 {
-                    columnNames.Length.ShouldBe( dbfReader.FieldCount );
+                    dbfReader.FieldCount.ShouldBe( csvColumnNames.Length + csvDelta );
 
                     String[] csvValues = csvParser.Read();
 
-                    dbfReader.FieldCount.ShouldBe( csvValues.Length );
+                    dbfReader.FieldCount.ShouldBe( csvValues.Length + csvDelta );
 
-                    for( Int32 i = 0; i < dbfReader.FieldCount; i++ )
+                    Int32 maxCols = Math.Min( csvValues.Length + csvDelta, dbfReader.FieldCount );
+                    for( Int32 i = 0; i < maxCols; i++ )
                     {
                         String csvValue = csvValues[i];
-                        String dbfValue = dbfReader[i].ToString();
 
-                        dbfValue.ShouldBe( csvValue, customMessage: $"Row: {row}, Column: {i}" );
+                        if( dbfReader[i] is DateTime dt )
+                        {
+                            String dbfValueDt = dt.ToString( "yyyyMMdd", CultureInfo.InvariantCulture );
+                            dbfValueDt.ShouldBe( csvValue, customMessage: $"Row: {row}, Column: {i}" );
+                        }
+                        else
+                        {
+                            String dbfValue = dbfReader[i].ToString();
+                            dbfValue.ShouldBe( csvValue, customMessage: $"Row: {row}, Column: {i}" );
+                        }
                     }
 
                     row++;
