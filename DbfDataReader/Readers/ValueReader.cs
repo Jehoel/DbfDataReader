@@ -214,14 +214,18 @@ namespace Dbf
             return Single.Parse( value, NumberStyles.Any, CultureInfo.InvariantCulture );
         }
 
-        public virtual Decimal? ReadNumber(DbfColumn column, BinaryReader reader)
+        /// <summary>Returns null, Int32, or Decimal.</summary>
+        public virtual Object ReadNumber(DbfColumn column, BinaryReader reader)
         {
             if( column == null ) throw new ArgumentNullException(nameof(column));
 
             if( column.Length > 20 ) throw new InvalidOperationException("Number columns cannot exceed 20 characters.");
 
+            // TODO: Handle Column.DecimalCount? Though the original implementation didn't use it...
+
             String value = ReadAsciiString( reader, column.Length );
             if( String.IsNullOrWhiteSpace( value ) ) return null;
+            if( Int32.TryParse( value, NumberStyles.Integer, CultureInfo.InvariantCulture, out Int32 integerNumber ) ) return integerNumber;
 
             return Decimal.Parse( value, NumberStyles.Any, CultureInfo.InvariantCulture );
         }
