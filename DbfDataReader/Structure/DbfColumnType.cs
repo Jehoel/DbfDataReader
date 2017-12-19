@@ -15,6 +15,6 @@
         Character = 'C',
         Double = 'O',
         Timestamp = '@',
-        Autoincrement = '+'
+        AutoIncrement = '+'
     }
 }

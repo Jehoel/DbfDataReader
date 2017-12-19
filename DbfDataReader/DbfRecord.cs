@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace DbfDataReader
 {
-    public enum DbfRecordStatus : byte
+    public enum DbfRecordStatus
     {
         Unknown = 0,
         EOF     = 0x1A,
@@ -76,6 +76,8 @@ namespace DbfDataReader
 
         public override Int64 GetChars(Int32 i, Int64 dataIndex, Char[] buffer, Int32 bufferIndex, Int32 length)
         {
+            if( buffer == null ) throw new ArgumentNullException(nameof(buffer));
+
             String source = (String)this.values[i];
 
             Int32 actualLength = (Int32)Math.Min( source.Length - dataIndex, length );
@@ -83,7 +85,10 @@ namespace DbfDataReader
             for( Int32 sourceIdx = (Int32)dataIndex; sourceIdx < actualLength; sourceIdx++ )
             {
                 buffer[ bufferIndex ] = source[ sourceIdx ];
-                bufferIndex++;
+                checked
+                {
+                    bufferIndex++;
+                }
             }
 
             return actualLength;

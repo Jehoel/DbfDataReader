@@ -26,17 +26,6 @@ namespace DbfDataReader
             this.DecimalCount = decimalCount;
         }
 
-        private static DbfColumn Create(Int32 index, Char[] nameChars, Byte columnType, Byte length, Byte decimalCount)
-        {
-            return new DbfColumn(
-                index,
-                new String( nameChars ).TrimEnd('\0'),
-                (DbfColumnType)columnType,
-                length,
-                decimalCount
-            );
-        }
-
         [CLSCompliant(false)]
         public static async Task<DbfColumn> ReadAsync(AsyncBinaryReader reader, Int32 index)
         {

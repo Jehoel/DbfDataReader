@@ -40,6 +40,8 @@ namespace DbfDataReader
 
         public static DbfHeader Read(BinaryReader reader)
         {
+            if( reader == null ) throw new ArgumentNullException(nameof(reader));
+
             Byte   version      = reader.ReadByte();
             Byte   dateYear     = reader.ReadByte();
             Byte   dateMonth    = reader.ReadByte();

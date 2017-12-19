@@ -30,7 +30,7 @@ namespace DbfDataReader
                 case DbfColumnType.Memo          : return 10; // value is a pointer to a field in a memo file.
                 case DbfColumnType.Number        : return 20; // FoxPro and Clipper: 20 chars, 18 in dBase.
                 case DbfColumnType.SignedLong    : return 4;
-                case DbfColumnType.Autoincrement : return 4; // 'long' == 4
+                case DbfColumnType.AutoIncrement : return 4; // 'long' == 4
                 case DbfColumnType.Timestamp     : return 8;
                 case DbfColumnType.Double        : return 8;
                 default:

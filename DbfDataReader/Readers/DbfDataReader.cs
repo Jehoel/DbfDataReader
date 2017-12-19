@@ -9,7 +9,7 @@ namespace DbfDataReader
     {
         public DbfTable Table { get; }
 
-        protected readonly ValueReader valueReader;
+        protected ValueReader ValueReader { get; }
 
         internal DbfDataReader(DbfTable table)
         {
@@ -17,15 +17,15 @@ namespace DbfDataReader
 
             if( table.Header.IsFoxPro )
             {
-                this.valueReader = FoxProValueReader.Instance;
+                this.ValueReader = FoxProValueReader.Instance;
             }
             else if( table.Header.Version == (Byte)0x5 )
             {
-                this.valueReader = DBase5ValueReader.Instance;
+                this.ValueReader = DBase5ValueReader.Instance;
             }
             else
             {
-                this.valueReader = ValueReader.Instance;
+                this.ValueReader = ValueReader.Instance;
             }
         }
 

@@ -148,7 +148,7 @@ namespace DbfDataReader
             {
                 try
                 {
-                    Object value = this.valueReader.ReadValue( cols[i], this.binaryReader, this.TextEncoding );
+                    Object value = this.ValueReader.ReadValue( cols[i], this.binaryReader, this.TextEncoding );
                     values[i] = value;
                 }
                 catch(EndOfStreamException)

@@ -21,3 +21,4 @@ using System.Runtime.InteropServices;
 
 [assembly: CLSCompliant(isCompliant: true)]
 
+[assembly: AssemblyVersion("0.1.*")]
