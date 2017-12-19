@@ -8,7 +8,7 @@ namespace Dbf
     public enum DbfRecordStatus
     {
         Unknown = 0,
-        EOF     = 0x1A,
+        Eof     = 0x1A,
         Deleted = 0x2A,
         Valid   = 0x20
     }

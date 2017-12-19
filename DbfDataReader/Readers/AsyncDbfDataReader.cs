@@ -53,18 +53,18 @@ namespace Dbf
 
         public override Boolean IsClosed => this.isDisposed;
 
-        protected override Boolean EOF => this.isEof;
+        protected override Boolean Eof => this.isEof;
 
         private Boolean SetEOF()
         {
-            if( this.EOF ) return true;
+            if( this.Eof ) return true;
 
             if( this.binaryReader.BaseStream.Position == this.binaryReader.BaseStream.Length )
             {
                 this.isEof = true;
             }
 
-            return this.EOF;
+            return this.Eof;
         }
 
         public override Boolean Read()

@@ -135,7 +135,7 @@ namespace Dbf
 
                 if( this.Table.Header.RecordCount == 0 ) return false;
                 
-                if( this.EOF ) return false;
+                if( this.Eof ) return false;
 
                 return true;
             }
@@ -174,7 +174,7 @@ namespace Dbf
 
         #endregion
 
-        protected abstract Boolean EOF { get; }
+        protected abstract Boolean Eof { get; }
 
         public abstract Encoding TextEncoding { get; }
 

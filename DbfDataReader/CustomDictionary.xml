@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Dictionary>
+	<Words>
+
+		<Unrecognized>
+			<Word></Word>
+		</Unrecognized>
+		<Recognized>
+			<Word>FileStream</Word>
+			<Word>DbfDataReader</Word>
+			<Word>DbfRecord</Word>
+			<Word>Dbf</Word>
+			<Word>Eof</Word>
+			<Word>xBase</Word>
+			<Word>DBase</Word>
+			<Word>Ascii</Word>
+			<Word>DateTime</Word>
+		</Recognized>
+		<Deprecated>
+			<Term PreferredAlternate=""></Term>
+		</Deprecated>
+		<Compound>
+			<Term CompoundAlternate=""></Term>
+		</Compound>
+		<DiscreteExceptions>
+			<Term>DbfDataReader</Term>
+			<Term>DbfRecord</Term>
+			<Term>DBase</Term>
+			<Word>DateTime</Word>
+		</DiscreteExceptions>
+	</Words>
+	<Acronyms>
+		<!--
+		<CasingExceptions>
+			<Acronym>DBase</Acronym>
+			<Acronym>XBase</Acronym>
+		
+			<Acronym>DbfDataReader</Acronym>
+			<Acronym>DbfRecord</Acronym>
+			
+		</CasingExceptions>
+		-->
+	</Acronyms>
+</Dictionary>
