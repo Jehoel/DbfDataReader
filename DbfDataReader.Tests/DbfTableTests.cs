@@ -4,9 +4,11 @@ using Xunit;
 
 namespace DbfDataReader.Tests
 {
+#if MEMO
     [Collection("dbase_30")]
     public class DbfTableTests
     {
+       
         [Fact]
         public void Should_dispose_binary_reader()
         {
@@ -35,4 +37,5 @@ namespace DbfDataReader.Tests
             dbfTable.Memo.ShouldBeNull();
         }
     }
+#endif
 }

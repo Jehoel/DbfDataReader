@@ -28,6 +28,8 @@ namespace DbfDataReader
                 throw new InvalidOperationException("The created FileStream could not perform both Read and Seek operations.");
             }
 
+            this.fileStream = stream;
+
             this.binaryReader = new BinaryReader( this.fileStream, Encoding.ASCII, leaveOpen: true );
 
             this.TextEncoding = textEncoding;

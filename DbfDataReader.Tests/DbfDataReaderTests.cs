@@ -12,7 +12,8 @@ namespace DbfDataReader.Tests
         public DbfDataReaderTests()
         {
             this.testFileName = DbaseTests.GetFullPath( "dbase_03.dbf" );
-            this.DbfDataReader = new DbfDataReader( this.testFileName );
+            this.DbfTable = DbfTable.Open( this.testFileName );
+            this.DbfDataReader = this.DbfTable.OpenDataReader(randomAccess: false);
         }
 
         public void Dispose()
@@ -21,6 +22,7 @@ namespace DbfDataReader.Tests
             this.DbfDataReader = null;
         }
 
+        public DbfTable DbfTable { get; set; }
         public DbfDataReader DbfDataReader { get; set; }
 
         [Fact]

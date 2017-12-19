@@ -175,6 +175,8 @@ namespace DbfDataReader
 
         protected Int64 GetRecordFileOffset(Int32 recordIndex)
         {
+            if( recordIndex < 0 ) throw new ArgumentOutOfRangeException( nameof(recordIndex), recordIndex, "Value cannot be less than zero." );
+
             Int64 offset = this.Table.Header.HeaderLength + (this.Table.Header.RecordLength * recordIndex);
             return offset;
         }

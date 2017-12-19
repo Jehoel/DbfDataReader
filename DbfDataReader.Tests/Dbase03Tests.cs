@@ -15,25 +15,25 @@ namespace DbfDataReader.Tests
         [Fact]
         public void Should_report_correct_record_count()
         {
-            DbfHeader.RecordCount.ShouldBe(14);
+            this.dbfTable.Header.RecordCount.ShouldBe(14);
         }
 
         [Fact]
         public void Should_report_correct_version_number()
         {
-            DbfHeader.Version.ShouldBe(0x03);
+            this.dbfTable.Header.Version.ShouldBe( (byte)0x03 );
         }
 
         [Fact]
         public void Should_report_that_the_file_is_not_foxpro()
         {
-            DbfHeader.IsFoxPro.ShouldBeFalse();
+            this.dbfTable.Header.IsFoxPro.ShouldBeFalse();
         }
 
         [Fact]
         public void Should_have_the_correct_number_of_columns()
         {
-            DbfTable.Columns.Count.ShouldBe(31);
+            this.dbfTable.Columns.Count.ShouldBe(31);
         }
 
         [Fact]

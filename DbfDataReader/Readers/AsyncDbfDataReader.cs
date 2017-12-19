@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Overby.Extensions.AsyncBinaryReaderWriter;
 
 namespace DbfDataReader
@@ -33,6 +34,8 @@ namespace DbfDataReader
                 stream.Dispose();
                 throw new InvalidOperationException("The created FileStream is not asynchronous.");
             }
+
+            this.fileStream = stream;
 
             this.binaryReader = new AsyncBinaryReader( this.fileStream, Encoding.ASCII, leaveOpen: true );
 

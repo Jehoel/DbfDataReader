@@ -93,7 +93,7 @@ namespace DbfDataReader
         public SyncDbfDataReader OpenDataReader(Boolean randomAccess, DbfDataReaderOptions options)
         {
             SyncDbfDataReader reader = new SyncDbfDataReader( this, randomAccess, this.TextEncoding, options );
-            reader.Seek( 0 ); // Move to first record.
+            reader.Seek( recordIndex: 0 ); // Move to first record.
             return reader;
         }
         
@@ -102,7 +102,7 @@ namespace DbfDataReader
         public AsyncDbfDataReader OpenDataReaderAsync(Boolean randomAccess, DbfDataReaderOptions options)
         {
             AsyncDbfDataReader reader = new AsyncDbfDataReader( this, randomAccess, this.TextEncoding, options );
-            reader.Seek( 0 ); // Move to first record.
+            reader.Seek( recordIndex: 0 ); // Move to first record.
             return reader;
         }
 
