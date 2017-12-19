@@ -53,6 +53,7 @@
   <ItemGroup>
     <Compile Include="Readers\AsyncDbfDataReader.cs" />
     <Compile Include="Readers\SyncDbfDataReader.cs" />
+    <Compile Include="Readers\ValueReader.cs" />
     <Compile Include="Structure\DbfColumn.cs" />
     <Compile Include="Structure\DbfColumnType.cs" />
     <Compile Include="Readers\DbfDataReader.cs" />
