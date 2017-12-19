@@ -77,5 +77,24 @@ namespace Dbf.Tests
 
             rowCount.ShouldBe(14);
         }
+
+        [Fact]
+        public void Shoud_be_able_to_read_subsets_first_and_last()
+        {
+            Int32[] selectedColumns = new Int32[]
+            {
+                 0, // Point_ID
+                 7, // Comments
+                30 // Point_ID
+            };
+
+            using( SubsetSyncDbfDataReader rdr = this.DbfTable.OpenSubsetDataReader( selectedColumns, randomAccess: false ) )
+            {
+                while( rdr.Read() )
+                {
+                    rdr.Current.FieldCount.ShouldBe( selectedColumns.Length );
+                }
+            }
+        }
     }
 }

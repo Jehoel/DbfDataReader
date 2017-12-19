@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Dbf
 {
-    public sealed class SyncDbfDataReader : DbfDataReader
+    public class SyncDbfDataReader : DbfDataReader
     {
         private readonly FileStream   fileStream;
         private readonly BinaryReader binaryReader;
@@ -17,7 +17,6 @@ namespace Dbf
 
         public override Encoding TextEncoding { get; }
 
-        /// <param name="ignoreEof">If true, then a </param>
         internal SyncDbfDataReader(DbfTable table, Boolean randomAccess, Encoding textEncoding, DbfDataReaderOptions options)
             : base( table )
         {
@@ -48,7 +47,7 @@ namespace Dbf
 
         protected override Boolean Eof => this.isEof;
 
-        private Boolean SetEOF()
+        protected Boolean SetEOF()
         {
             if( this.Eof ) return true;
 
@@ -126,7 +125,7 @@ namespace Dbf
 
             //////////////////////
 
-            if( this.ReadRecord( offset, recordStatus ) )
+            if( this.ReadRecord( this.binaryReader, offset, recordStatus ) )
             {
                 return DbfReadResult.Read;
             }
@@ -136,7 +135,7 @@ namespace Dbf
             }
         }
 
-        private Boolean ReadRecord( Int64 offset, DbfRecordStatus recordStatus)
+        protected virtual Boolean ReadRecord(BinaryReader reader, Int64 offset, DbfRecordStatus recordStatus)
         {
             IList<DbfColumn> cols = this.Table.Columns;
 
@@ -148,7 +147,7 @@ namespace Dbf
             {
                 try
                 {
-                    Object value = this.ValueReader.ReadValue( cols[i], this.binaryReader, this.TextEncoding );
+                    Object value = this.ValueReader.ReadValue( cols[i], reader, this.TextEncoding );
                     values[i] = value;
                 }
                 catch(EndOfStreamException)
@@ -168,6 +167,71 @@ namespace Dbf
             Int64 desiredOffset = this.GetRecordFileOffset( recordIndex );
             Int64 currentOffset = this.binaryReader.BaseStream.Seek( desiredOffset, SeekOrigin.Begin );
             return desiredOffset == currentOffset;
+        }
+    }
+
+    /// <summary>Allows only specified columns to be read as a single record, potentially faster as it won't read/parse unwanted data.</summary>
+    public class SubsetSyncDbfDataReader : SyncDbfDataReader
+    {
+        private readonly DbfTable originalTable;
+        private readonly Int32[] columns;
+
+        private static DbfTable CreateVirtualTable(DbfTable table, Int32[] columnIndexes)
+        {
+            DbfColumn[] selectedColumns = new DbfColumn[ columnIndexes.Length ];
+            for( Int32 i = 0; i < columnIndexes.Length; i++ ) selectedColumns[i] = table.Columns[ columnIndexes[i] ];
+
+            return new DbfTable( table.File, table.Header, selectedColumns, table.TextEncoding );
+        }
+
+        internal SubsetSyncDbfDataReader(DbfTable table, Int32[] columnIndexes, Boolean randomAccess, Encoding textEncoding, DbfDataReaderOptions options)
+            : base( CreateVirtualTable( table, columnIndexes ), randomAccess, textEncoding, options )
+        {
+            this.originalTable = table;
+            this.columns       = columnIndexes;
+        }
+
+        protected override Boolean ReadRecord(BinaryReader reader, Int64 offset, DbfRecordStatus recordStatus)
+        {
+            // TODO: Fix this, it doesn't work.
+
+            IList<DbfColumn> realCols    = this.originalTable.Columns;
+            IList<DbfColumn> virtualCols = this.Table.Columns;
+
+            Object[] values = new Object[ virtualCols.Count ];
+
+            Int32 dataLength = this.Table.Header.RecordDataLength;
+
+            Int32 vColIdx = 0;
+            for( Int32 i = 0; i < realCols.Count; i++ )
+            {
+                if( vColIdx >= virtualCols.Count ) break;
+
+                if( i < virtualCols[vColIdx].Index )
+                {
+                    // Skip columns we're not interested in:
+                    Int32 realColLength = Utility.GetDbfColumnTypeLength( realCols[i].ColumnType, realCols[i].Length );
+                    reader.BaseStream.Seek( realColLength, SeekOrigin.Current );
+                }
+                else
+                {
+                    try
+                    {
+                        Object value = this.ValueReader.ReadValue( realCols[i], reader, this.TextEncoding );
+                        values[ vColIdx ] = value;
+                        vColIdx++;
+                    }
+                    catch(EndOfStreamException)
+                    {
+                        this.SetEOF();
+                        this.Current = null; // TODO: Set `this.Current` to a partial record?
+                        return false;
+                    }
+                }
+            }
+
+            this.Current = new DbfRecord( this.Table, offset, recordStatus, values );
+            return true;
         }
     }
 }

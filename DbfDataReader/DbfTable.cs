@@ -15,7 +15,7 @@ namespace Dbf
         private const int HeaderMetaDataSize = 33;
         private const int ColumnMetaDataSize = 32;
 
-        private DbfTable(FileInfo file, DbfHeader header, IList<DbfColumn> columns, Encoding textEncoding)
+        internal DbfTable(FileInfo file, DbfHeader header, IList<DbfColumn> columns, Encoding textEncoding)
         {
             this.File          = file;
             this.Header        = header;
@@ -97,6 +97,23 @@ namespace Dbf
         public SyncDbfDataReader OpenDataReader(Boolean randomAccess, DbfDataReaderOptions options)
         {
             SyncDbfDataReader reader = new SyncDbfDataReader( this, randomAccess, this.TextEncoding, options );
+            try
+            {
+                reader.Seek( recordIndex: 0 ); // Move to first record.
+                return reader;
+            }
+            catch
+            {
+                ((IDisposable)reader).Dispose();
+                throw;
+            }
+        }
+
+        public SubsetSyncDbfDataReader OpenSubsetDataReader(Int32[] selectColumnIndexes, Boolean randomAccess) => this.OpenSubsetDataReader( selectColumnIndexes, randomAccess, DbfDataReaderOptions.None );
+
+        public SubsetSyncDbfDataReader OpenSubsetDataReader(Int32[] selectColumnIndexes, Boolean randomAccess, DbfDataReaderOptions options)
+        {
+            SubsetSyncDbfDataReader reader = new SubsetSyncDbfDataReader( this, selectColumnIndexes, randomAccess, this.TextEncoding, options );
             try
             {
                 reader.Seek( recordIndex: 0 ); // Move to first record.
