@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Overby.Extensions.AsyncBinaryReaderWriter;
 
-namespace DbfDataReader
+namespace Dbf
 {
     /// <summary>Immutable DBF header record.</summary>
     public class DbfHeader

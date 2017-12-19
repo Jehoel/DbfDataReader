@@ -76,9 +76,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DbfDataReader\DbfDataReader.NetFx.csproj">
+    <ProjectReference Include="..\DbfDataReader\Dbf.NetFx.csproj">
       <Project>{86834ea5-07e5-4f4d-be2d-b10f59e7f9c8}</Project>
-      <Name>DbfDataReader.NetFx</Name>
+      <Name>Dbf.NetFx</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />

@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace DbfDataReader
+namespace Dbf
 {
     public abstract class DbfMemoFile : IDisposable
     {

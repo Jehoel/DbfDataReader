@@ -3,7 +3,7 @@ using System.Collections;
 using System.Data.Common;
 using System.Text;
 
-namespace DbfDataReader
+namespace Dbf
 {
     public abstract class DbfDataReader : DbDataReader
     {

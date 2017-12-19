@@ -1,4 +1,4 @@
-﻿namespace DbfDataReader
+﻿namespace Dbf
 {
     public enum DbfColumnType
     {

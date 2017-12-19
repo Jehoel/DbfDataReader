@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Overby.Extensions.AsyncBinaryReaderWriter;
 
-namespace DbfDataReader
+namespace Dbf
 {
     /// <summary>This class is thread-safe... for now....</summary>
     public class ValueReader

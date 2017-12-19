@@ -2,7 +2,7 @@ using System;
 using Shouldly;
 using Xunit;
 
-namespace DbfDataReader.Tests
+namespace Dbf.Tests
 {
     [Collection("dbase_03")]
     public class DbfDataReaderTests : IDisposable

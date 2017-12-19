@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace DbfDataReader
+namespace Dbf
 {
     [Serializable]
     public class DbfFileFormatException : Exception

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Overby.Extensions.AsyncBinaryReaderWriter;
 
-namespace DbfDataReader
+namespace Dbf
 {
     /// <summary>Immutable DBF column definition record.</summary>
     [DebuggerDisplay("Name={Name}, Index={Index}, Type={ColumnType}({Length})")]

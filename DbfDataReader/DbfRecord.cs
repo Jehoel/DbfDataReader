@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 using System.Data.Common;
 using System.Linq;
 
-namespace DbfDataReader
+namespace Dbf
 {
     public enum DbfRecordStatus
     {

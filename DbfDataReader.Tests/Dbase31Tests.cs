@@ -1,7 +1,7 @@
 ﻿using Shouldly;
 using Xunit;
 
-namespace DbfDataReader.Tests
+namespace Dbf.Tests
 {
     [Collection("dbase_31")]
     public class Dbase31Tests : DbaseTests

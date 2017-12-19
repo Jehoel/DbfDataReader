@@ -5,7 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 
-namespace DbfDataReader.Tests
+namespace Dbf.Tests
 {
     public abstract class DbaseTests : IDisposable
     {

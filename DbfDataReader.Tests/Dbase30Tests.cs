@@ -2,7 +2,7 @@
 using Shouldly;
 using Xunit;
 
-namespace DbfDataReader.Tests
+namespace Dbf.Tests
 {
     [Collection("dbase_30")]
     public class Dbase30Tests : DbaseTests

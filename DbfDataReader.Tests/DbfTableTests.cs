@@ -2,7 +2,7 @@
 using Shouldly;
 using Xunit;
 
-namespace DbfDataReader.Tests
+namespace Dbf.Tests
 {
 #if MEMO
     [Collection("dbase_30")]

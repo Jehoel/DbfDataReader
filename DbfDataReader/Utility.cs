@@ -2,7 +2,7 @@
 using System.IO;
 using System.Security.AccessControl;
 
-namespace DbfDataReader
+namespace Dbf
 {
     internal static class Utility
     {
