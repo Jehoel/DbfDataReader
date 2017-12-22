@@ -7,13 +7,6 @@ using Overby.Extensions.AsyncBinaryReaderWriter;
 
 namespace Dbf
 {
-    public interface IDbfTableType
-    {
-        DbfActualColumnType GetActualColumnType(DbfColumnType type);
-
-        DbfMemoFile OpenMemoFile(String tableName);
-    }
-
     /// <summary>This class is thread-safe... for now....</summary>
     public static partial class ValueReader
     {

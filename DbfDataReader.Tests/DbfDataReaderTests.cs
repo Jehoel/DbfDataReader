@@ -175,11 +175,11 @@ namespace Dbf.Tests
             {
                 new DbfColumn( 0, "ColA", DbfColumnType.Number   ,  7, 0 ),
                 new DbfColumn( 1, "ColB", DbfColumnType.Character, 10, 0 ),
-                new DbfColumn( 2, "ColC", DbfColumnType.Boolean  ,  1, 0 ),
+                new DbfColumn( 2, "ColC", DbfColumnType.Logical  ,  1, 0 ),
                 new DbfColumn( 3, "ColD", DbfColumnType.DateTime ,  8, 0 ),
                 new DbfColumn( 4, "ColE", DbfColumnType.Number   ,  7, 0 ),
                 new DbfColumn( 5, "ColF", DbfColumnType.Character, 10, 0 ),
-                new DbfColumn( 6, "ColG", DbfColumnType.Boolean  ,  1, 0 ),
+                new DbfColumn( 6, "ColG", DbfColumnType.Logical  ,  1, 0 ),
                 new DbfColumn( 7, "ColH", DbfColumnType.DateTime ,  8, 0 )
             };
 

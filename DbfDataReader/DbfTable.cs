@@ -46,13 +46,15 @@ namespace Dbf
             using( BinaryReader reader = new BinaryReader( fs, Encoding.ASCII ) )
             {
                 DbfHeader header = DbfHeader.Read( reader );
+
+                IDbfTableType tableType = DbfTableType.GetDbfTableType(  )
                 
                 List<DbfColumn> columns = new List<DbfColumn>();
                 DbfColumn lastColumn = null;
                 Int32 index = 0;
                 do
                 {
-                    lastColumn = DbfColumn.Read( reader, index );
+                    lastColumn = DbfColumn.Read( , reader, index );
                     index++;
                     if( lastColumn != null ) columns.Add( lastColumn );
                 }

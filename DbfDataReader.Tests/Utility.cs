@@ -24,7 +24,7 @@ namespace Dbf
 
             switch( type )
             {
-                case DbfColumnType.Boolean       : return 1;
+                case DbfColumnType.Logical       : return 1;
                 case DbfColumnType.Character     : return declaredLength;
                 case DbfColumnType.Currency      : return declaredLength; // see original version of DbfValueCurrency.cs
                 case DbfColumnType.Date          : return 8;
@@ -48,7 +48,7 @@ namespace Dbf
         {
             switch( type )
             {
-                case DbfColumnType.Boolean       : return 1;
+                case DbfColumnType.Logical       : return 1;
                 case DbfColumnType.Date          : return 8;
                 case DbfColumnType.DateTime      : return 8;
                 case DbfColumnType.DoubleOrBinary:

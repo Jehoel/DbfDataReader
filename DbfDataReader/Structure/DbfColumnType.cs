@@ -4,20 +4,27 @@ namespace Dbf
 {
     public enum DbfColumnType
     {
-        Number = 'N',
-        SignedLong = 'I',
-        Float = 'F',
-        Currency = 'Y',
-        Date = 'D',
-        DateTime = 'T',
-        Boolean = 'L',
-        Memo = 'M',
-        DoubleOrBinary = 'B',
-        General = 'G',
-        Character = 'C',
-        Double = 'O',
-        Timestamp = '@',
-        AutoIncrement = '+'
+        // http://www.dbase.com/Knowledgebase/INT/db7_file_fmt.htm
+        Number         = 'N',
+        SignedLong     = 'I', // 4-bytes
+        Float          = 'F', // Number stored as a string
+        Currency       = 'Y',
+        Date           = 'D',
+        DateTime       = 'T',
+        Logical        = 'L', // aka Boolean
+        Memo           = 'M', // 10-digit memo format
+        DoubleOrBinary = 'B', // Binary in dBase 7: 10-digit memo format, UInt16 in FoxPro
+        General        = 'G', // aka OLE, 10-digit memo format
+        Character      = 'C',
+        Double         = 'O', // 8 bytes
+        Timestamp      = '@', // 8 bytes
+        AutoIncrement  = '+', // dBase 7: 4-bytes, same representation as SignedLong
+
+        // From Visual FoxPro: https://msdn.microsoft.com/en-us/library/st4a0s68(v=vs.80).aspx
+        Blob           = 'W',
+        Picture        = 'P',
+        VarBinary      = 'Q',
+        VarChar        = 'V'
     }
 
     // Two competing ideas:
@@ -26,7 +33,7 @@ namespace Dbf
 
     public enum DbfActualColumnType
     {
-        /// <summary>A boolean value stored as a single ASCII character, e.g. 'Y', 'N', 'T', 'F', etc.</summary>
+        /// <summary>A boolean value stored as a single ASCII character, e.g. 'Y', 'N', 'T', 'F', (in both upper-case and lower-case) etc.</summary>
         BooleanText,
         /// <summary>A number stored as a Base-10 ASCII string, with leading padding. Will be returned as a Decimal.</summary>
         NumberText,
@@ -38,7 +45,7 @@ namespace Dbf
         UInt64,
         /// <summary>Binary data stored inline in the file.</summary>
         ByteArray,
-        /// <summary>Binary data stored in a memo file. The inline value will be a block pointer.</summary>
+        /// <summary>Binary data stored in a memo file. The inline value will be a block pointer. dBase 7 uses 'B' as the type and stores a 10-digit DBT block number, stored as a string.</summary>
         MemoByteArray,
         /// <summary>ASCII (or other encoding, as-per parameter) text value inline in the table. Restricted to 0-255 characters. Only the DbfColumn.Length property is used.</summary>
         Text,
@@ -57,6 +64,7 @@ namespace Dbf
 
     public class MemoBlock
     {
-        // TODO
+        /// <summary>"10 digits representing a .DBT block number. The number is stored as a string, right justified and padded with blanks."</summary>
+        public UInt64 DbtBlockNumber { get; }
     }
 }
