@@ -17,33 +17,35 @@ namespace Dbf
         public Byte          Length       { get; }
         public Byte          DecimalCount { get; }
 
-        public DbfColumn(Int32 index, String name, DbfColumnType columnType, Boolean isFoxPro)
-            : this( index, name, columnType, Utility.GetDbfColumnTypeFixedLength( columnType, isFoxPro ), 0 )
-        {
-        }
+        public DbfActualColumnType ActualColumnType { get; }
 
-        public DbfColumn(Int32 index, String name, DbfColumnType columnType, Byte length, Byte decimalCount)
+        public DbfColumn(Int32 index, String name, DbfColumnType columnType, Byte length, Byte decimalCount, DbfActualColumnType actualColumnType)
         {
             this.Index        = index;
             this.Name         = name;
             this.ColumnType   = columnType;
             this.Length       = length;
             this.DecimalCount = decimalCount;
+
+            this.ActualColumnType = actualColumnType;
         }
 
         [CLSCompliant(false)]
-        public static async Task<DbfColumn> ReadAsync(AsyncBinaryReader reader, Int32 index)
+        public static async Task<DbfColumn> ReadAsync(IDbfTableType tableType, AsyncBinaryReader reader, Int32 index)
         {
             String name = await ReadNameAsync( reader ).ConfigureAwait(false);
             if( name == null ) return null;
 
-            Byte          columnType       = await reader.ReadByteAsync()   .ConfigureAwait(false);
-            UInt32        fieldDataAddress = await reader.ReadUInt32Async() .ConfigureAwait(false); // ignore field data address
-            Byte          length           = await reader.ReadByteAsync()   .ConfigureAwait(false);
-            Byte          decimalCount     = await reader.ReadByteAsync()   .ConfigureAwait(false);
-            Byte[]        reserved         = await reader.ReadBytesAsync(14).ConfigureAwait(false); // skip the reserved bytes
+            Byte          columnType       =   await reader.ReadByteAsync()   .ConfigureAwait(false);
+            /*UInt32      fieldDataAddress =*/ await reader.ReadUInt32Async() .ConfigureAwait(false); // ignore field data address
+            Byte          length           =   await reader.ReadByteAsync()   .ConfigureAwait(false);
+            Byte          decimalCount     =   await reader.ReadByteAsync()   .ConfigureAwait(false);
+            /*(Byte[]     reserved         =*/ await reader.ReadBytesAsync(14).ConfigureAwait(false); // skip the reserved bytes
 
-            return new DbfColumn( index, name, (DbfColumnType)columnType, length, decimalCount );
+            DbfColumnType columnType2 = (DbfColumnType)columnType;
+            DbfActualColumnType actualColumnType = tableType.GetActualColumnType( columnType2 );
+
+            return new DbfColumn( index, name, columnType2, length, decimalCount, actualColumnType );
         }
 
         private static async Task<String> ReadNameAsync(AsyncBinaryReader reader)
@@ -61,18 +63,21 @@ namespace Dbf
             return name;
         }
 
-        public static DbfColumn Read(BinaryReader reader, Int32 index)
+        public static DbfColumn Read(IDbfTableType tableType, BinaryReader reader, Int32 index)
         {
             String name = ReadName( reader );
             if( name == null ) return null;
 
-            Byte          columnType       = reader.ReadByte();
-            /*UInt32        fieldDataAddress =*/ reader.ReadUInt32(); // ignore field data address
-            Byte          length           = reader.ReadByte();
-            Byte          decimalCount     = reader.ReadByte();
-            /*Byte[]        reserved         =*/ reader.ReadBytes(14); // skip the reserved bytes
+            Byte          columnType       =   reader.ReadByte();
+            /*UInt32      fieldDataAddress =*/ reader.ReadUInt32(); // ignore field data address
+            Byte          length           =   reader.ReadByte();
+            Byte          decimalCount     =   reader.ReadByte();
+            /*Byte[]      reserved         =*/ reader.ReadBytes(14); // skip the reserved bytes
 
-            return new DbfColumn( index, name, (DbfColumnType)columnType, length, decimalCount );
+            DbfColumnType columnType2 = (DbfColumnType)columnType;
+            DbfActualColumnType actualColumnType = tableType.GetActualColumnType( columnType2 );
+
+            return new DbfColumn( index, name, columnType2, length, decimalCount, actualColumnType );
         }
 
         private static String ReadName(BinaryReader reader)

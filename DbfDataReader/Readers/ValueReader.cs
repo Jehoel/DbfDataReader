@@ -1,49 +1,52 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using Overby.Extensions.AsyncBinaryReaderWriter;
 
 namespace Dbf
 {
-    /// <summary>This class is thread-safe... for now....</summary>
-    public class ValueReader
+    public interface IDbfTableType
     {
-        public static ValueReader Instance { get; } = new ValueReader();
+        DbfActualColumnType GetActualColumnType(DbfColumnType type);
 
+        DbfMemoFile OpenMemoFile(String tableName);
+    }
+
+    /// <summary>This class is thread-safe... for now....</summary>
+    public static partial class ValueReader
+    {
         #region Switch
 
-        public Object ReadValue(DbfColumn column, BinaryReader reader, Encoding encoding)
+        public static Object ReadValue(DbfColumn column, BinaryReader reader, Encoding encoding)
         {
-            Object couldBeNull = this.ReadValueInner( column, reader, encoding );
+            Object couldBeNull = ReadValueInner( column, reader, encoding );
             if( couldBeNull is null ) return DBNull.Value;
             return couldBeNull;
         }
 
-        protected virtual Object ReadValueInner(DbfColumn column, BinaryReader reader, Encoding encoding)
+        private static Object ReadValueInner(DbfColumn column, BinaryReader reader, Encoding encoding)
         {
             if( column == null ) throw new ArgumentNullException(nameof(column));
 
-            switch( column.ColumnType )
+            switch( column.ActualColumnType )
             {
-                case DbfColumnType.Boolean       : return this.ReadBoolean( column, reader );
-                case DbfColumnType.Character     : return this.ReadCharacter( column, reader, encoding );
-                case DbfColumnType.Currency      : return this.ReadCurrency( column, reader );
-                case DbfColumnType.Date          : return this.ReadDate( column, reader );
-                case DbfColumnType.Timestamp     : return this.ReadTimestamp( column, reader );
-                case DbfColumnType.DateTime      : return this.ReadDateTime( column, reader );
-                case DbfColumnType.Double        : return this.ReadDouble( column, reader );
-                case DbfColumnType.Float         : return this.ReadFloat( column, reader );
-                case DbfColumnType.General       : return this.ReadGeneral( column, reader );
-                case DbfColumnType.Memo          : return this.ReadMemo( column, reader );
-                case DbfColumnType.Number        : return this.ReadNumber( column, reader );
-                case DbfColumnType.AutoIncrement : return this.ReadAutoIncrement( column, reader );
-                case DbfColumnType.SignedLong    : return this.ReadSignedLong( column, reader );
-
-                case DbfColumnType.DoubleOrBinary: // Make this a case that subclasses can handle in their override of ReadValueInner, or make it a virtual method? The problem is not knowing the true type and having a method return type of Object is just ugly...
+                case DbfActualColumnType.BooleanText         : return ReadBooleanText( column, reader );
+                case DbfActualColumnType.ByteArray           : return ReadByteArray( column, reader );
+                case DbfActualColumnType.DateText            : return ReadDateText( column, reader );
+                case DbfActualColumnType.DateTimeBinaryJulian: return ReadDateTimeBinaryJulian( column, reader );
+                case DbfActualColumnType.FloatSingle         : return ReadFloatSingle( column, reader );
+                case DbfActualColumnType.FloatDouble         : return ReadFloatDouble( column, reader );
+                case DbfActualColumnType.Int16               : return ReadInt16( column, reader );
+                case DbfActualColumnType.Int32               : return ReadInt32( column, reader );
+                case DbfActualColumnType.Int64               : return ReadInt64( column, reader );
+                case DbfActualColumnType.UInt16              : return ReadUInt16( column, reader );
+                case DbfActualColumnType.UInt32              : return ReadUInt32( column, reader );
+                case DbfActualColumnType.UInt64              : return ReadUInt64( column, reader );
+                case DbfActualColumnType.MemoByteArray       : return ReadMemoByteArray( column, reader );
+                case DbfActualColumnType.MemoText            : return ReadMemoText( column, reader );
+                case DbfActualColumnType.NumberText          : return ReadNumberText( column, reader );
+                case DbfActualColumnType.Text                : return ReadText( column, reader, encoding );
+                case DbfActualColumnType.TextLong            : return ReadTextLong( column, reader, encoding );
                 default:
                     throw new NotImplementedException();
             }
@@ -51,7 +54,7 @@ namespace Dbf
 
         #endregion
 
-        protected static String ReadAsciiString(BinaryReader reader, Int32 length)
+        private static String ReadAsciiString(BinaryReader reader, Int32 length)
         {
             if( reader == null ) throw new ArgumentNullException(nameof(reader));
 
@@ -62,68 +65,34 @@ namespace Dbf
             return Encoding.ASCII.GetString( buffer, 0, bytesRead );
         }
 
-        [CLSCompliant(false)]
-        protected static async Task<String> ReadAsciiStringAsync(AsyncBinaryReader reader, Int32 length)
+        private static void AssertColumn(DbfColumn column, Int32 expectedLength = -1, Int32 expectedDecimalCount = -1)
         {
-            if( reader == null ) throw new ArgumentNullException(nameof(reader));
+            if( expectedLength >= 0 )
+            {
+                if( column.Length != expectedLength )
+                {
+                    throw new ArgumentException( "Expected a column length of {0} but encountered {1}.".FormatCurrent( expectedLength, column.Length ) );
+                }
+            }
 
-            Byte[] buffer = new Byte[ length ];
-            Int32 bytesRead = await reader.ReadAsync( buffer, 0, length ).ConfigureAwait(false);
-            return Encoding.ASCII.GetString( buffer, 0, bytesRead );
+            if( expectedDecimalCount >= 0 )
+            {
+                if( column.DecimalCount != expectedDecimalCount )
+                {
+                    throw new ArgumentException( "Expected a decimal count of {0} but encountered {1}.".FormatCurrent( expectedDecimalCount, column.DecimalCount ) );
+                }
+            }
         }
 
-        #region Text and Bool
+        #region Read Sync
 
-        private static readonly Char[] _textPaddingChars = new Char[] { '\0', ' ' };
-
-        public virtual String ReadCharacter(DbfColumn column, BinaryReader reader, Encoding encoding)
+        private static Boolean? ReadBooleanText(DbfColumn column, BinaryReader reader)
         {
-            if( column == null ) throw new ArgumentNullException(nameof(column));
-            if( reader == null ) throw new ArgumentNullException(nameof(reader));
-
-            UInt16 length = (UInt16)(( column.DecimalCount << 8 ) | column.Length); // FoxPro stores the high-byte in DecimalCount
-            Byte[] text = reader.ReadBytes( length );
-            return this.ReadCharacter( text, encoding );
-        }
-
-        [CLSCompliant(false)]
-        public virtual async Task<String> ReadCharacterAsync(DbfColumn column, AsyncBinaryReader reader, Encoding encoding)
-        {
-            if( reader == null ) throw new ArgumentNullException(nameof(reader));
-
-            UInt16 length = (UInt16)(( column.DecimalCount << 8 ) | column.Length); // FoxPro stores the high-byte in DecimalCount
-            Byte[] text = await reader.ReadBytesAsync( length ).ConfigureAwait(false);
-            return this.ReadCharacter( text, encoding );
-        }
-
-        protected virtual String ReadCharacter(Byte[] text, Encoding encoding)
-        {
-            if( encoding == null ) throw new ArgumentNullException(nameof(encoding));
-
-            String textStr = encoding.GetString( text );
-            String trimmed = textStr.TrimEnd( _textPaddingChars );
-
-            return trimmed;
-        }
-
-        public virtual Boolean? ReadBoolean(DbfColumn column, BinaryReader reader)
-        {
-            if( reader == null ) throw new ArgumentNullException(nameof(reader));
-
             Char c = (Char)reader.ReadByte();
-            return this.ReadBoolean( c );
+            return ParseBoolean( c );
         }
 
-        [CLSCompliant(false)]
-        public virtual async Task<Boolean?> ReadBooleanAsync(DbfColumn column, AsyncBinaryReader reader)
-        {
-            if( reader == null ) throw new ArgumentNullException(nameof(reader));
-
-            Char c = (Char)await reader.ReadByteAsync().ConfigureAwait(false);
-            return this.ReadBoolean( c );
-        }
-
-        protected virtual Boolean? ReadBoolean(Char characterValue)
+        private static Boolean? ParseBoolean(Char characterValue)
         {
             switch( characterValue )
             {
@@ -145,29 +114,28 @@ namespace Dbf
             }
         }
 
-        #endregion
-
-        #region Dates/DateTimes
+        private static Byte[] ReadByteArray(DbfColumn column, BinaryReader reader)
+        {
+            return reader.ReadBytes( column.Length );
+        }
 
         private static readonly DateTime _julianDay2299161 = new DateTime( 1582, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified );
 
-        public virtual DateTime? ReadDate(DbfColumn column, BinaryReader reader)
+        private static DateTime? ReadDateText(DbfColumn column, BinaryReader reader)
         {
-            String dateStr = ReadAsciiString( reader, 8 );
+            // TODO: If it has a Length of 6, does that mean it's "yyMMdd" format?
+            AssertColumn( column, 8, 0 );
+
+            String dateStr = ReadAsciiString( reader, column.Length );
             if( String.IsNullOrWhiteSpace( dateStr ) ) return null;
 
             DateTime value = DateTime.ParseExact( dateStr, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None );
             return value;
         }
 
-        public virtual DateTime? ReadTimestamp(DbfColumn column, BinaryReader reader)
+        private static DateTime? ReadDateTimeBinaryJulian(DbfColumn column, BinaryReader reader)
         {
-            return this.ReadDateTime( column, reader );
-        }
-
-        public virtual DateTime? ReadDateTime(DbfColumn column, BinaryReader reader)
-        {
-            if( reader == null ) throw new ArgumentNullException(nameof(reader));
+            AssertColumn( column, 8, 0 );
 
             // bytes 0-3: date: little-endian 32-bit integer Julian day number.
             // bytes 4-7: time: milliseconds since midnight
@@ -185,117 +153,94 @@ namespace Dbf
             return dateTime;
         }
 
-        #endregion
-
-        #region Numbers
-
-        public virtual Decimal? ReadCurrency(DbfColumn column, BinaryReader reader)
+        private static Single? ReadFloatSingle(DbfColumn column, BinaryReader reader)
         {
-            if( reader == null ) throw new ArgumentNullException(nameof(reader));
+            AssertColumn( column, 4, 0 );
+            return reader.ReadSingle();
+        }
 
+        private static Double? ReadFloatDouble(DbfColumn column, BinaryReader reader)
+        {
+            AssertColumn( column, 8, 0 );
+            return reader.ReadDouble();
+        }
+
+        private static Int16? ReadInt16(DbfColumn column, BinaryReader reader)
+        {
+            AssertColumn( column, 2, 0 );
+            return reader.ReadInt16();
+        }
+        private static UInt16? ReadUInt16(DbfColumn column, BinaryReader reader)
+        {
+            AssertColumn( column, 2, 0 );
+            return reader.ReadUInt16();
+        }
+        private static Int32? ReadInt32(DbfColumn column, BinaryReader reader)
+        {
+            AssertColumn( column, 4, 0 );
+            return reader.ReadInt32();
+        }
+        private static UInt32? ReadUInt32(DbfColumn column, BinaryReader reader)
+        {
+            AssertColumn( column, 4, 0 );
+            return reader.ReadUInt32();
+        }
+        private static Int64? ReadInt64(DbfColumn column, BinaryReader reader)
+        {
+            AssertColumn( column, 8, 0 );
+            return reader.ReadInt64();
+        }
+        private static UInt64? ReadUInt64(DbfColumn column, BinaryReader reader)
+        {
+            AssertColumn( column, 8, 0 );
+            return reader.ReadUInt64();
+        }
+
+        private static MemoBlock ReadMemoByteArray(DbfColumn column, BinaryReader reader)
+        {
             throw new NotImplementedException();
         }
 
-        public virtual Double? ReadDouble(DbfColumn column, BinaryReader reader)
+        private static MemoBlock ReadMemoText(DbfColumn column, BinaryReader reader)
         {
-            if( reader == null ) throw new ArgumentNullException(nameof(reader));
-
-            return reader.ReadDouble();
-        }
-        
-        public virtual Single? ReadFloat(DbfColumn column, BinaryReader reader)
-        {
-            String value = ReadAsciiString( reader, 20 );
-            if( String.IsNullOrWhiteSpace( value ) ) return null;
-
-            return Single.Parse( value, NumberStyles.Any, CultureInfo.InvariantCulture );
+            throw new NotImplementedException();
         }
 
-        /// <summary>Returns null, Int32, or Decimal.</summary>
-        public virtual Object ReadNumber(DbfColumn column, BinaryReader reader)
+        private static Decimal? ReadNumberText(DbfColumn column, BinaryReader reader)
         {
-            if( column == null ) throw new ArgumentNullException(nameof(column));
-
+            AssertColumn( column, expectedDecimalCount: 0 ); // TODO: How is DecimalCount handled for NumberText columns?
             if( column.Length > 20 ) throw new InvalidOperationException("Number columns cannot exceed 20 characters.");
-
-            // TODO: Handle Column.DecimalCount? Though the original implementation didn't use it...
 
             String value = ReadAsciiString( reader, column.Length );
             if( String.IsNullOrWhiteSpace( value ) ) return null;
-            if( Int32.TryParse( value, NumberStyles.Integer, CultureInfo.InvariantCulture, out Int32 integerNumber ) ) return integerNumber;
-
             return Decimal.Parse( value, NumberStyles.Any, CultureInfo.InvariantCulture );
         }
 
-        public virtual Int32? ReadAutoIncrement(DbfColumn column, BinaryReader reader)
+        private static readonly Char[] _textPaddingChars = new Char[] { '\0', ' ' };
+
+        private static String ReadText(DbfColumn column, BinaryReader reader, Encoding encoding)
         {
-            return this.ReadSignedLong( column, reader );
+            AssertColumn( column, expectedDecimalCount: 0 );
+
+            Byte[] text = reader.ReadBytes( column.Length );
+            
+            String textStr = encoding.GetString( text );
+            String trimmed = textStr.TrimEnd( _textPaddingChars );
+
+            return trimmed;
         }
 
-        public virtual Int32? ReadSignedLong(DbfColumn column, BinaryReader reader)
+        private static String ReadTextLong(DbfColumn column, BinaryReader reader, Encoding encoding)
         {
-            if( reader == null ) throw new ArgumentNullException(nameof(reader));
+            Int32  length = ( column.DecimalCount << 8 ) | column.Length;
+            Byte[] text = reader.ReadBytes( length );
+            
+            String textStr = encoding.GetString( text );
+            String trimmed = textStr.TrimEnd( _textPaddingChars );
 
-            // Int32
-            return reader.ReadInt32();
-        }
-
-        #endregion
-
-        #region Blobs
-
-        public virtual Object ReadGeneral(DbfColumn column, BinaryReader reader)
-        {
-            // Binary
-            throw new NotImplementedException();
-        }
-
-        public virtual Object ReadMemo(DbfColumn column, BinaryReader reader)
-        {
-            // Binary
-            throw new NotImplementedException();
+            return trimmed;
         }
 
         #endregion
-    }
-
-    public class FoxProValueReader : ValueReader
-    {
-        public new static FoxProValueReader Instance { get; } = new FoxProValueReader();
-
-        protected override Object ReadValueInner(DbfColumn column, BinaryReader reader, Encoding encoding)
-        {
-            if( column == null ) throw new ArgumentNullException(nameof(column));
-            if( reader == null ) throw new ArgumentNullException(nameof(reader));
-
-            if( column.ColumnType == DbfColumnType.DoubleOrBinary )
-            {
-                return reader.ReadInt16();
-            }
-            else
-            {
-                return base.ReadValueInner( column, reader, encoding );
-            }
-        }
-    }
-
-    public class DBase5ValueReader : ValueReader
-    {
-        public new static DBase5ValueReader Instance { get; } = new DBase5ValueReader();
-
-        protected override Object ReadValueInner(DbfColumn column, BinaryReader reader, Encoding encoding)
-        {
-            if( column == null ) throw new ArgumentNullException(nameof(column));
-            if( reader == null ) throw new ArgumentNullException(nameof(reader));
-
-            if( column.ColumnType == DbfColumnType.DoubleOrBinary )
-            {
-                throw new NotImplementedException();
-            }
-            else
-            {
-                return base.ReadValueInner( column, reader, encoding );
-            }
-        }
     }
 }

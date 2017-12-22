@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Dbf
 {
@@ -59,6 +60,40 @@ namespace Dbf
             }
 
             return true;
+        }
+
+        public static String FormatInvariant(this String format, params Object[] args)
+        {
+            return String.Format( CultureInfo.InvariantCulture, format, args );
+        }
+
+        public static String FormatCurrent(this String format, params Object[] args)
+        {
+            return String.Format( CultureInfo.CurrentCulture, format, args );
+        }
+
+        public static String ToStringInvariant<T>(this T value, String format)
+            where T : IFormattable
+        {
+            return value.ToString( format, CultureInfo.InvariantCulture );
+        }
+
+        public static String ToStringCurrent<T>(this T value, String format)
+            where T : IFormattable
+        {
+            return value.ToString( format, CultureInfo.CurrentCulture );
+        }
+
+        public static String ToStringInvariant<T>(this T value)
+            where T : IConvertible
+        {
+            return value.ToString( CultureInfo.InvariantCulture );
+        }
+
+        public static String ToStringCurrent<T>(this T value)
+            where T : IConvertible
+        {
+            return value.ToString( CultureInfo.CurrentCulture );
         }
     }
 }
