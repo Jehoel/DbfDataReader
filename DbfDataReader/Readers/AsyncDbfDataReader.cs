@@ -139,7 +139,7 @@ namespace Dbf
             {
                 try
                 {
-                    Object value = await this.ValueReader.ReadValueAsync( cols[i], reader, this.TextEncoding ).ConfigureAwait(false);
+                    Object value = await ValueReader.ReadValueAsync( cols[i], reader, this.TextEncoding ).ConfigureAwait(false);
                     values[i] = value;
                 }
                 catch(EndOfStreamException)

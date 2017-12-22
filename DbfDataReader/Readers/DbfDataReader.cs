@@ -9,24 +9,9 @@ namespace Dbf
     {
         public DbfTable Table { get; }
 
-        protected ValueReader ValueReader { get; }
-
         internal DbfDataReader(DbfTable table)
         {
             this.Table = table;
-
-            if( table.Header.IsFoxPro )
-            {
-                this.ValueReader = FoxProValueReader.Instance;
-            }
-            else if( table.Header.Version == (Byte)0x5 )
-            {
-                this.ValueReader = DBase5ValueReader.Instance;
-            }
-            else
-            {
-                this.ValueReader = ValueReader.Instance;
-            }
         }
 
         private DbfRecord current;

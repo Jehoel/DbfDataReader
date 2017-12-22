@@ -55,5 +55,8 @@ namespace Dbf
         DateTimeBinaryJulian
     }
 
-    
+    public class MemoBlock
+    {
+        // TODO
+    }
 }

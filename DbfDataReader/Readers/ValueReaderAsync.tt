@@ -1,0 +1,143 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Text.RegularExpressions" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #><#
+
+State state = State.BeforeRegion;
+
+List<String> rewrittenLines = new List<String>();
+
+foreach( String line in File.ReadAllLines( GetValueReaderCSFileName() ) )
+{
+	switch( state )
+	{
+		case State.BeforeRegion:
+		{
+			if( line.IndexOf("#region Read Sync") > -1 )
+			{
+				state = State.InRegion;
+			}
+			break;
+		}
+		case State.InRegion:
+		{
+			Match m = _readMethod.Match( line );
+			if( m.Success )
+			{
+				state = State.InReadMethodBraces;
+				String output = RewriteMethodLine( m );
+				rewrittenLines.Add( output );
+			}
+			else if( line == "        #endregion" )
+			{
+				state = State.AfterRegion;
+			}
+			break;
+		}
+		case State.InReadMethodBraces:
+		{
+			if( line != "        {" ) throw new InvalidOperationException("Expected opening brace.");
+			state = State.InReadMethod;
+			rewrittenLines.Add( line );
+			break;
+		}
+		case State.InReadMethod:
+		{
+			if( line == "        }" )
+			{
+				state = State.InRegion;
+				rewrittenLines.Add( line );
+				rewrittenLines.Add( "\r\n" );
+			}
+			else
+			{
+				String output = line;
+
+				Match m = _binaryReaderCall.Match( line );
+				if( m.Success )
+				{
+					output = RewriteBinaryReaderCall( line );
+				}
+				else if( line.IndexOf("ReadAsciiString") > -1 )
+				{
+					output = line.Replace("= ReadAsciiString( reader, column.Length )", "= await ReadAsciiStringAsync( reader, column.Length ).ConfigureAwait(false)");
+				}
+
+				rewrittenLines.Add( output );
+			}
+			
+			break;
+		}
+	}
+}
+
+#>using System;
+using System.Globalization;
+using System.Text;
+using System.Threading.Tasks;
+using Overby.Extensions.AsyncBinaryReaderWriter;
+
+namespace Dbf
+{
+	public static partial class ValueReader
+	{
+<#
+	foreach( String line in rewrittenLines ) {
+		WriteLine( line );
+	}
+#>
+	}
+}
+
+
+<#+
+
+enum State {
+	BeforeRegion,
+	InRegion,
+	InReadMethodBraces,
+	InReadMethod,
+	AfterRegion
+}
+
+static String GetValueReaderCSFileName()
+{
+	return @"C:\git\rss\DbfDataReader\DbfDataReader\DbfDataReader\Readers\ValueReader.cs";
+}
+
+static readonly Regex _readMethod = new Regex( @"^        private static (\w+\??(\[\])?) Read(\w+)\((.*)\)$" );
+
+static String RewriteMethodLine(Match match)
+{
+	String output = "        private static async Task<{0}> Read{1}Async({2})";
+
+	String returnType = match.Groups[1].Value;
+	String name       = match.Groups[3].Value;
+	String paras      = match.Groups[4].Value;
+
+	paras = paras.Replace("BinaryReader", "AsyncBinaryReader");
+
+	output = String.Format( output, returnType, name, paras );
+	return output;
+}
+
+static readonly String _binaryReaderCallPattern = @"\breader\.Read(\w+)\((.*)\)";
+static readonly Regex _binaryReaderCall = new Regex( _binaryReaderCallPattern );
+
+static String RewriteBinaryReaderCall(String line)
+{
+	//const String replacement = @"";
+
+	//Regex.Replace( _binaryReaderCallPattern, line,  );
+
+	return line
+		.Replace("reader", "await reader")
+		.Replace("(", "Async(")
+		.Replace(")", ").ConfigureAwait(false)");
+}
+
+#>

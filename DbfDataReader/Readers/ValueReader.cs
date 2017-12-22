@@ -2,6 +2,8 @@
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
+using Overby.Extensions.AsyncBinaryReaderWriter;
 
 namespace Dbf
 {
@@ -52,16 +54,62 @@ namespace Dbf
             }
         }
 
+        public static async Task<Object> ReadValueAsync(DbfColumn column, AsyncBinaryReader reader, Encoding encoding)
+        {
+            Object couldBeNull = await ReadValueInnerAsync( column, reader, encoding ).ConfigureAwait(false);
+            if( couldBeNull is null ) return DBNull.Value;
+            return couldBeNull;
+        }
+
+        private static Task<Object> ReadValueInnerAsync(DbfColumn column, AsyncBinaryReader reader, Encoding encoding)
+        {
+            if( column == null ) throw new ArgumentNullException(nameof(column));
+
+            switch( column.ActualColumnType )
+            {
+                case DbfActualColumnType.BooleanText         : return ReadBooleanTextAsync         ( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.ByteArray           : return ReadByteArrayAsync           ( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.DateText            : return ReadDateTextAsync            ( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.DateTimeBinaryJulian: return ReadDateTimeBinaryJulianAsync( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.FloatSingle         : return ReadFloatSingleAsync         ( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.FloatDouble         : return ReadFloatDoubleAsync         ( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.Int16               : return ReadInt16Async               ( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.Int32               : return ReadInt32Async               ( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.Int64               : return ReadInt64Async               ( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.UInt16              : return ReadUInt16Async              ( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.UInt32              : return ReadUInt32Async              ( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.UInt64              : return ReadUInt64Async              ( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.MemoByteArray       : return ReadMemoByteArrayAsync       ( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.MemoText            : return ReadMemoTextAsync            ( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.NumberText          : return ReadNumberTextAsync          ( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.Text                : return ReadTextAsync                ( column, reader, encoding ).ContinueWith( ToObject );
+                case DbfActualColumnType.TextLong            : return ReadTextLongAsync            ( column, reader, encoding ).ContinueWith( ToObject );
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        private static Object ToObject<T>(Task<T> task)
+        {
+            return (Object)task.Result;
+        }
+
         #endregion
 
         private static String ReadAsciiString(BinaryReader reader, Int32 length)
         {
-            if( reader == null ) throw new ArgumentNullException(nameof(reader));
-
             // NOTE: Previously this used an instance-readonly reusable buffer, but it isn't thread-safe, and the performance gain (if any) probably isn't worthwhile.
             // Unless, perhaps, thread-local storage?
+
             Byte[] buffer = new Byte[ length ];
             Int32 bytesRead = reader.Read( buffer, 0, length );
+            return Encoding.ASCII.GetString( buffer, 0, bytesRead );
+        }
+
+        private static async Task<String> ReadAsciiStringAsync(AsyncBinaryReader reader, Int32 length)
+        {
+            Byte[] buffer = new Byte[ length ];
+            Int32 bytesRead = await reader.ReadAsync( buffer, 0, length ).ConfigureAwait(false);
             return Encoding.ASCII.GetString( buffer, 0, bytesRead );
         }
 
@@ -88,7 +136,8 @@ namespace Dbf
 
         private static Boolean? ReadBooleanText(DbfColumn column, BinaryReader reader)
         {
-            Char c = (Char)reader.ReadByte();
+            Byte b = reader.ReadByte();
+            Char c = (Char)b;
             return ParseBoolean( c );
         }
 
