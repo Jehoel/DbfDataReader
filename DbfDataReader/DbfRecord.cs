@@ -184,6 +184,8 @@ namespace Dbf
 
         public override Int32 GetValues(Object[] values)
         {
+            if( values == null ) throw new ArgumentNullException(nameof(values));
+
             Int32 max = Math.Min( this.values.Length, values.Length );
             for( Int32 i = 0; i < max; i++ )
             {

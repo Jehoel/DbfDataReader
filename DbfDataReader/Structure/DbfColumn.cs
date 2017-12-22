@@ -67,10 +67,10 @@ namespace Dbf
             if( name == null ) return null;
 
             Byte          columnType       = reader.ReadByte();
-            UInt32        fieldDataAddress = reader.ReadUInt32(); // ignore field data address
+            /*UInt32        fieldDataAddress =*/ reader.ReadUInt32(); // ignore field data address
             Byte          length           = reader.ReadByte();
             Byte          decimalCount     = reader.ReadByte();
-            Byte[]        reserved         = reader.ReadBytes(14); // skip the reserved bytes
+            /*Byte[]        reserved         =*/ reader.ReadBytes(14); // skip the reserved bytes
 
             return new DbfColumn( index, name, (DbfColumnType)columnType, length, decimalCount );
         }

@@ -151,8 +151,7 @@ namespace Dbf
 
         #region Dates/DateTimes
 
-        private static readonly DateTime _julianDay2299161Local = new DateTime( 1582, 10, 15, 0, 0, 0, 0, DateTimeKind.Local );
-        private static readonly DateTime _julianDay2299161Utc   = new DateTime( 1582, 10, 15, 0, 0, 0, 0, DateTimeKind.Utc   );
+        private static readonly DateTime _julianDay2299161 = new DateTime( 1582, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified );
 
         public virtual DateTime? ReadDate(DbfColumn column, BinaryReader reader)
         {
@@ -183,7 +182,7 @@ namespace Dbf
             Int32 daysSince2299161 = days - 2299161;
             if( daysSince2299161 < 0 ) throw new InvalidOperationException("Invalid DateTime value.");
 
-            DateTime date = _julianDay2299161Local.AddDays( daysSince2299161 );
+            DateTime date = _julianDay2299161.AddDays( daysSince2299161 );
             DateTime dateTime = date.AddMilliseconds( time );
             return dateTime;
         }

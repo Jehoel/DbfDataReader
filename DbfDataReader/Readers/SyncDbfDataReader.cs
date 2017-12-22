@@ -48,7 +48,7 @@ namespace Dbf
 
         protected override Boolean Eof => this.isEof;
 
-        protected Boolean SetEOF()
+        protected Boolean SetEof()
         {
             if( this.Eof ) return true;
 
@@ -76,7 +76,7 @@ namespace Dbf
 
         private DbfReadResult ReadImpl()
         {
-            if( this.SetEOF() ) return DbfReadResult.Eof;
+            if( this.SetEof() ) return DbfReadResult.Eof;
 
             Int64 offset = this.binaryReader.BaseStream.Position;
 
@@ -98,7 +98,7 @@ namespace Dbf
                 if( this.options.HasFlag(DbfDataReaderOptions.IgnoreEof) )
                 {
                     // Check the stream length. A "real" EOF should follow.
-                    if( this.SetEOF() ) return DbfReadResult.Eof;
+                    if( this.SetEof() ) return DbfReadResult.Eof;
 
                     // Else, NOOP and read as normal, though the data is probably garbage (as in, was-valid-when-written-but-now-probably-meaningless.
                 }
@@ -146,11 +146,11 @@ namespace Dbf
 
         protected virtual Boolean ReadRecord(BinaryReader reader, Int64 offset, DbfRecordStatus recordStatus)
         {
+            if( reader == null ) throw new ArgumentNullException(nameof(reader));
+
             IList<DbfColumn> cols = this.Table.Columns;
 
             Object[] values = new Object[ cols.Count ];
-
-            Int32 dataLength = this.Table.Header.RecordDataLength;
 
             for( Int32 i = 0; i < cols.Count; i++ )
             {
@@ -161,7 +161,7 @@ namespace Dbf
                 }
                 catch(EndOfStreamException)
                 {
-                    this.SetEOF();
+                    this.SetEof();
                     this.Current = null; // TODO: Set `this.Current` to a partial record?
                     return false;
                 }
@@ -202,15 +202,13 @@ namespace Dbf
 
         protected override Boolean ReadRecord(BinaryReader reader, Int64 offset, DbfRecordStatus recordStatus)
         {
-            // TODO: Fix this, it doesn't work.
+            if( reader == null ) throw new ArgumentNullException(nameof(reader));
 
             IList<DbfColumn> realCols    = this.originalTable.Columns;
             IList<DbfColumn> virtualCols = this.Table.Columns;
 
-            Int32 vColIdx = 0;
+            Int32 valuesIdx = 0;
             Object[] values = new Object[ virtualCols.Count ];
-
-            Int32 dataLength = this.Table.Header.RecordDataLength;
 
             Int32[] runs = GetRuns( realCols, this.selectedColumnIndexen );
 
@@ -228,12 +226,12 @@ namespace Dbf
                     try
                     {
                         Object value = this.ValueReader.ReadValue( column, reader, this.TextEncoding );
-                        values[ vColIdx ] = value;
-                        vColIdx++;
+                        values[ valuesIdx ] = value;
+                        valuesIdx++;
                     }
                     catch(EndOfStreamException)
                     {
-                        this.SetEOF();
+                        this.SetEof();
                         this.Current = null; // TODO: Set `this.Current` to a partial record?
                         return false;
                     }
@@ -244,8 +242,11 @@ namespace Dbf
             return true;
         }
 
-        public static Int32[] GetRuns(IList<DbfColumn> allColumns, IList<Int32> selectedColumnIndexen)
+        public static Int32[] GetRuns(IList<DbfColumn> allColumns, IEnumerable<Int32> selectedColumnIndexes)
         {
+            if( allColumns == null ) throw new ArgumentNullException(nameof(allColumns));
+            if( selectedColumnIndexes == null ) throw new ArgumentNullException(nameof(selectedColumnIndexes));
+
             // Validate: Ensure arguments are in monotonically ascending order:
             if( !allColumns.Select( c => c.Index ).IsMonotonicallyIncreasing() ) throw new ArgumentException("Columns are not in index-order.");
             //if( !selectedColumnIndexen.IsMonotonicallyIncreasing() ) throw new ArgumentException("SelectedColumns are not in index-order.");
@@ -265,7 +266,7 @@ namespace Dbf
             // Compacted:
             // [ 0, 1, -24, 4, -1 ]
 
-            HashSet<Int32> selectedColumns = new HashSet<Int32>( selectedColumnIndexen );
+            HashSet<Int32> selectedColumns = new HashSet<Int32>( selectedColumnIndexes );
 
             Int32[] runs = new Int32[ allColumns.Count ];
             for( Int32 i = 0; i < runs.Length; i++ )
@@ -286,6 +287,8 @@ namespace Dbf
 
         public static Int32[] CompactRuns(Int32[] runs)
         {
+            if( runs == null ) throw new ArgumentNullException(nameof(runs));
+
             Int32 compactedRunCount = 0;
             Boolean lastWasNegative = false;
 

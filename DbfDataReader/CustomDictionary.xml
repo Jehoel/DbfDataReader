@@ -20,7 +20,7 @@
 			<Term PreferredAlternate=""></Term>
 		</Deprecated>
 		<Compound>
-			<Term CompoundAlternate=""></Term>
+			<Term CompoundAlternate="DateTime">DateTime</Term>
 		</Compound>
 		<DiscreteExceptions>
 			<Term>DbfDataReader</Term>

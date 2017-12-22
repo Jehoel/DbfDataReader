@@ -9,7 +9,8 @@ namespace Dbf
         protected const int BlockHeaderSize  =   8;
         protected const int DefaultBlockSize = 512;
 
-        protected BinaryReader BinaryReader { get; }
+        private readonly BinaryReader binaryReader;
+        protected BinaryReader BinaryReader => this.binaryReader;
 
         public    String       FileName     { get; }
 
@@ -28,13 +29,21 @@ namespace Dbf
             this.FileName = fileName;
 
             FileStream fileStream = new FileStream( fileName, FileMode.Open );
-            this.BinaryReader = new BinaryReader( fileStream, encoding );
+            try
+            {
+                this.binaryReader = new BinaryReader( fileStream, encoding );
+            }
+            catch
+            {
+                fileStream.Dispose();
+                throw;
+            }
         }
 
         protected DbfMemoFile(Stream stream, Encoding encoding)
         {
             this.FileName = null;
-            this.BinaryReader = new BinaryReader( stream, encoding );
+            this.binaryReader = new BinaryReader( stream, encoding );
         }
 
         public void Close()
@@ -52,7 +61,7 @@ namespace Dbf
         {
             if( disposing )
             {
-                this.BinaryReader.Dispose();
+                this.binaryReader.Dispose();
             }
         }
         
