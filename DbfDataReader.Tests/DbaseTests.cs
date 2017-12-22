@@ -30,7 +30,15 @@ namespace Dbf.Tests
 
         public void Dispose()
         {
-            this.dbfTable = null;
+            this.Dispose( disposing: true );
+        }
+
+        protected virtual void Dispose(Boolean disposing)
+        {
+            if( disposing )
+            {
+                this.dbfTable = null;
+            }
         }
 
         public string FixturePath { get; }

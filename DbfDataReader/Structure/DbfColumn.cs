@@ -17,6 +17,11 @@ namespace Dbf
         public Byte          Length       { get; }
         public Byte          DecimalCount { get; }
 
+        public DbfColumn(Int32 index, String name, DbfColumnType columnType, Boolean isFoxPro)
+            : this( index, name, columnType, Utility.GetDbfColumnTypeFixedLength( columnType, isFoxPro ), 0 )
+        {
+        }
+
         public DbfColumn(Int32 index, String name, DbfColumnType columnType, Byte length, Byte decimalCount)
         {
             this.Index        = index;

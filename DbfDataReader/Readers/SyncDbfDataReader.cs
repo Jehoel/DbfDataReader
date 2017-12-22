@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Dbf
@@ -127,6 +128,14 @@ namespace Dbf
 
             if( this.ReadRecord( this.binaryReader, offset, recordStatus ) )
             {
+                Int64 expectedPosition = offset + this.Table.Header.RecordLength; // offset + (record-status == 1) + (record-data)
+                Int64 actualPosition   = this.binaryReader.BaseStream.Position;
+                if( actualPosition != expectedPosition )
+                {
+                    if( actualPosition > expectedPosition ) throw new InvalidOperationException("Read beyond record.");
+                    else throw new InvalidOperationException("Read less than record length.");
+                }
+
                 return DbfReadResult.Read;
             }
             else
@@ -174,7 +183,7 @@ namespace Dbf
     public class SubsetSyncDbfDataReader : SyncDbfDataReader
     {
         private readonly DbfTable originalTable;
-        private readonly Int32[] columns;
+        private readonly Int32[] selectedColumnIndexen;
 
         private static DbfTable CreateVirtualTable(DbfTable table, Int32[] columnIndexes)
         {
@@ -187,8 +196,8 @@ namespace Dbf
         internal SubsetSyncDbfDataReader(DbfTable table, Int32[] columnIndexes, Boolean randomAccess, Encoding textEncoding, DbfDataReaderOptions options)
             : base( CreateVirtualTable( table, columnIndexes ), randomAccess, textEncoding, options )
         {
-            this.originalTable = table;
-            this.columns       = columnIndexes;
+            this.originalTable         = table;
+            this.selectedColumnIndexen = columnIndexes;
         }
 
         protected override Boolean ReadRecord(BinaryReader reader, Int64 offset, DbfRecordStatus recordStatus)
@@ -198,26 +207,27 @@ namespace Dbf
             IList<DbfColumn> realCols    = this.originalTable.Columns;
             IList<DbfColumn> virtualCols = this.Table.Columns;
 
+            Int32 vColIdx = 0;
             Object[] values = new Object[ virtualCols.Count ];
 
             Int32 dataLength = this.Table.Header.RecordDataLength;
 
-            Int32 vColIdx = 0;
-            for( Int32 i = 0; i < realCols.Count; i++ )
-            {
-                if( vColIdx >= virtualCols.Count ) break;
+            Int32[] runs = GetRuns( realCols, this.selectedColumnIndexen );
 
-                if( i < virtualCols[vColIdx].Index )
+            for( Int32 i = 0; i < runs.Length; i++ )
+            {
+                if( runs[i] < 0 )
                 {
-                    // Skip columns we're not interested in:
-                    Int32 realColLength = Utility.GetDbfColumnTypeLength( realCols[i].ColumnType, realCols[i].Length );
-                    reader.BaseStream.Seek( realColLength, SeekOrigin.Current );
+                    Int32 skipLength = -runs[i];
+                    reader.BaseStream.Seek( skipLength, SeekOrigin.Current ); // Is Seeking cheaper or more expensive than Reading? Does it trigger any kind of random-IO or is it still considered non-random (sequential) IO reads provided the skips aren't too big? what about buffering inside FileStream and Win32 itself?
                 }
                 else
                 {
+                    DbfColumn column = realCols[ runs[i] ];
+
                     try
                     {
-                        Object value = this.ValueReader.ReadValue( realCols[i], reader, this.TextEncoding );
+                        Object value = this.ValueReader.ReadValue( column, reader, this.TextEncoding );
                         values[ vColIdx ] = value;
                         vColIdx++;
                     }
@@ -229,9 +239,92 @@ namespace Dbf
                     }
                 }
             }
-
+            
             this.Current = new DbfRecord( this.Table, offset, recordStatus, values );
             return true;
+        }
+
+        public static Int32[] GetRuns(IList<DbfColumn> allColumns, IList<Int32> selectedColumnIndexen)
+        {
+            // Validate: Ensure arguments are in monotonically ascending order:
+            if( !allColumns.Select( c => c.Index ).IsMonotonicallyIncreasing() ) throw new ArgumentException("Columns are not in index-order.");
+            //if( !selectedColumnIndexen.IsMonotonicallyIncreasing() ) throw new ArgumentException("SelectedColumns are not in index-order.");
+
+            ////////////////////////
+            // Determine runs:
+
+            // e.g.
+            // Real columns:
+            // Index:  0    1   2   3   4   5
+            // Length: 4    4   8   16  4   1
+
+            // Selected columns: 0, 1, 4
+            
+            // Runs (using negative numbers to denote skipped columns, where the values indicate the number of bytes to skip):
+            // [ 0, 1, -8, -16, 4, -1 ]
+            // Compacted:
+            // [ 0, 1, -24, 4, -1 ]
+
+            HashSet<Int32> selectedColumns = new HashSet<Int32>( selectedColumnIndexen );
+
+            Int32[] runs = new Int32[ allColumns.Count ];
+            for( Int32 i = 0; i < runs.Length; i++ )
+            {
+                if( selectedColumns.Contains( i ) )
+                {
+                    runs[i] = i;
+                }
+                else
+                {
+                    runs[i] = -Utility.GetDbfColumnTypeLength( allColumns[i] );
+                }
+            }
+
+            Int32[] compactedRuns = CompactRuns( runs );
+            return compactedRuns;
+        }
+
+        public static Int32[] CompactRuns(Int32[] runs)
+        {
+            Int32 compactedRunCount = 0;
+            Boolean lastWasNegative = false;
+
+            for( Int32 i = 0; i < runs.Length; i++ )
+            {
+                if( runs[i] < 0 )
+                {
+                    if( !lastWasNegative ) compactedRunCount++;
+                    lastWasNegative = true;
+                }
+                else
+                {
+                    compactedRunCount++;
+                    lastWasNegative = false;
+                }
+            }
+
+            Int32[] compactedRuns = new Int32[ compactedRunCount ];
+
+            Int32 ciIfNegative = 0;
+            Int32 ciIfPostive  = 0;
+
+            for( Int32 i = 0; i < runs.Length; i++ )
+            {
+                if( runs[i] < 0 )
+                {
+                    compactedRuns[ ciIfNegative ] += runs[i];
+                    ciIfPostive = ciIfNegative + 1;
+                }
+                else
+                {
+                    compactedRuns[ ciIfPostive ] = runs[i];
+
+                    ciIfPostive++;
+                    ciIfNegative = ciIfPostive;
+                }
+            }
+
+            return compactedRuns;
         }
     }
 }

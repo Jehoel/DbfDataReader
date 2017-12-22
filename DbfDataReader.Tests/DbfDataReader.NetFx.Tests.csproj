@@ -46,6 +46,7 @@
     <Compile Include="DbaseTests.cs" />
     <Compile Include="DbfDataReaderTests.cs" />
     <Compile Include="DbfTableTests.cs" />
+    <Compile Include="Utility.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

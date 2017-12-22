@@ -179,7 +179,7 @@ namespace Dbf
 
         public override Object GetValue(Int32 i)
         {
-            return (Decimal)this.values[i];
+            return this.values[i];
         }
 
         public override Int32 GetValues(Object[] values)
