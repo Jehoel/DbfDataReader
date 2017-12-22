@@ -61,17 +61,17 @@
     <Compile Include="DbfTableTypes.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="GlobalSuppressions.cs" />
-    <Compile Include="Readers\AsyncDbfDataReader.cs" />
-    <Compile Include="Readers\SyncDbfDataReader.cs" />
-    <Compile Include="Readers\ValueReader.cs" />
-    <Compile Include="Readers\ValueReaderAsync.cs">
+    <Compile Include="DbfReaders\AsyncDbfDataReader.cs" />
+    <Compile Include="DbfReaders\SyncDbfDataReader.cs" />
+    <Compile Include="DbfReaders\ValueReader.cs" />
+    <Compile Include="DbfReaders\ValueReaderAsync.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>ValueReaderAsync.tt</DependentUpon>
     </Compile>
     <Compile Include="Structure\DbfColumn.cs" />
     <Compile Include="Structure\DbfColumnType.cs" />
-    <Compile Include="Readers\DbfDataReader.cs" />
+    <Compile Include="DbfReaders\DbfDataReader.cs" />
     <Compile Include="DbfFileFormatException.cs" />
     <Compile Include="Structure\DbfHeader.cs" />
     <Compile Include="Structure\DbfMemo.cs" />
@@ -89,7 +89,7 @@
     <CodeAnalysisDictionary Include="CustomDictionary.xml" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Readers\ValueReaderAsync.tt">
+    <Content Include="DbfReaders\ValueReaderAsync.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>ValueReaderAsync.cs</LastGenOutput>
     </Content>
