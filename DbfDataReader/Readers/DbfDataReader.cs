@@ -198,6 +198,54 @@ namespace Dbf
 
         // There is no async Seek method, so this is shared by both implementations.
         public abstract Boolean Seek(Int32 recordIndex);
+
+        protected abstract Boolean SetEof();
+
+        protected DbfReadResult ShouldRead(DbfRecordStatus recordStatus, DbfDataReaderOptions options)
+        {
+            if( recordStatus == DbfRecordStatus.Deleted )
+            {
+                if( options.HasFlag(DbfDataReaderOptions.AllowDeleted) )
+                {
+                    // NOOP.
+                }
+                else
+                {
+                    return DbfReadResult.Skipped;
+                }
+            }
+            else if( recordStatus == DbfRecordStatus.Eof )
+            {
+                if( options.HasFlag(DbfDataReaderOptions.IgnoreEof) )
+                {
+                    // Check for real EOF anyway.
+                    if( this.SetEof() ) return DbfReadResult.Eof;
+
+                    // NOOP and read as normal, though the data is probably garbage (as in, was-valid-when-written-but-now-probably-meaningless.
+                }
+                else
+                {
+                    return DbfReadResult.Eof;
+                }
+            }
+            else if( recordStatus == DbfRecordStatus.Valid )
+            {
+                // NOOP
+            }
+            else
+            {
+                if( options.HasFlag(DbfDataReaderOptions.AllowInvalid) )
+                {
+                    // NOOP
+                }
+                else
+                {
+                    return DbfReadResult.Skipped;
+                }
+            }
+
+            return DbfReadResult.Read;
+        }
     }
 
     [Flags]

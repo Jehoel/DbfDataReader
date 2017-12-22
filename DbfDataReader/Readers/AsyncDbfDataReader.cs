@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -8,7 +9,7 @@ using Overby.Extensions.AsyncBinaryReaderWriter;
 
 namespace Dbf
 {
-    public sealed class AsyncDbfDataReader : DbfDataReader
+    public class AsyncDbfDataReader : DbfDataReader
     {
         private readonly FileStream        fileStream;
         private readonly AsyncBinaryReader binaryReader;
@@ -55,7 +56,7 @@ namespace Dbf
 
         protected override Boolean Eof => this.isEof;
 
-        private Boolean SetEOF()
+        protected override Boolean SetEof()
         {
             if( this.Eof ) return true;
 
@@ -72,13 +73,90 @@ namespace Dbf
             throw new NotSupportedException("Synchronous reading is not supported.");
         }
 
-        public override Task<Boolean> ReadAsync(CancellationToken cancellationToken)
+        public override async Task<Boolean> ReadAsync(CancellationToken cancellationToken)
         {
-            throw new NotImplementedException("TODO!");
+            if( this.SetEof() ) return false;
+
+            DbfReadResult result;
+            do
+            {
+                result = await this.ReadImplAsync( cancellationToken ).ConfigureAwait(false);
+            }
+            while( result == DbfReadResult.Skipped );
+
+            return result == DbfReadResult.Read;
+        }
+
+        private async Task<DbfReadResult> ReadImplAsync(CancellationToken cancellationToken)
+        {
+            if( this.SetEof() ) return DbfReadResult.Eof;
+
+            Int64 offset = this.binaryReader.BaseStream.Position;
+
+            DbfRecordStatus recordStatus = (DbfRecordStatus)await this.binaryReader.ReadByteAsync().ConfigureAwait(false);
+
+            DbfReadResult initReadResult = ShouldRead( recordStatus, this.options );
+            if( initReadResult == DbfReadResult.Skipped )
+            {
+                this.binaryReader.BaseStream.Seek( this.Table.Header.RecordDataLength, SeekOrigin.Current ); // skip-over those bytes. TODO: Is Seek() better than Read() for data we don't care about? will Seek() trigger Random-access behaviour - or only Seek() that extends beyond the current buffer (or two?) or goes in a backwards direction?
+                return DbfReadResult.Skipped;
+            }
+            else if( initReadResult == DbfReadResult.Eof )
+            {
+                return DbfReadResult.Eof;
+            }
+
+            //////////////////////
+
+            if( await this.ReadRecordAsync( this.binaryReader, offset, recordStatus ).ConfigureAwait(false) )
+            {
+                Int64 expectedPosition = offset + this.Table.Header.RecordLength; // offset + (record-status == 1) + (record-data)
+                Int64 actualPosition   = this.binaryReader.BaseStream.Position;
+                if( actualPosition != expectedPosition )
+                {
+                    if( actualPosition > expectedPosition ) throw new InvalidOperationException("Read beyond record.");
+                    else throw new InvalidOperationException("Read less than record length.");
+                }
+
+                return DbfReadResult.Read;
+            }
+            else
+            {
+                return DbfReadResult.Eof;
+            }
+        }
+
+        [CLSCompliant(false)]
+        protected virtual async Task<Boolean> ReadRecordAsync(AsyncBinaryReader reader, Int64 offset, DbfRecordStatus recordStatus)
+        {
+            if( reader == null ) throw new ArgumentNullException(nameof(reader));
+
+            IList<DbfColumn> cols = this.Table.Columns;
+
+            Object[] values = new Object[ cols.Count ];
+
+            for( Int32 i = 0; i < cols.Count; i++ )
+            {
+                try
+                {
+                    Object value = await this.ValueReader.ReadValueAsync( cols[i], reader, this.TextEncoding ).ConfigureAwait(false);
+                    values[i] = value;
+                }
+                catch(EndOfStreamException)
+                {
+                    this.SetEof();
+                    this.Current = null; // TODO: Set `this.Current` to a partial record?
+                    return false;
+                }
+            }
+
+            this.Current = new DbfRecord( this.Table, offset, recordStatus, values );
+            return true;
         }
 
         public override Boolean Seek(Int32 recordIndex)
         {
+            // Where is SeekAsync?
             Int64 desiredOffset = this.GetRecordFileOffset( recordIndex );
             Int64 currentOffset = this.binaryReader.BaseStream.Seek( desiredOffset, SeekOrigin.Begin );
             return desiredOffset == currentOffset;

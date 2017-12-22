@@ -14,14 +14,12 @@ namespace Dbf
     {
         public static ValueReader Instance { get; } = new ValueReader();
 
-        // TODO: Async versions of these...
-
         #region Switch
 
         public Object ReadValue(DbfColumn column, BinaryReader reader, Encoding encoding)
         {
             Object couldBeNull = this.ReadValueInner( column, reader, encoding );
-            if( Object.ReferenceEquals( null, couldBeNull ) ) return DBNull.Value;
+            if( couldBeNull is null ) return DBNull.Value;
             return couldBeNull;
         }
 

@@ -48,7 +48,7 @@ namespace Dbf
 
         protected override Boolean Eof => this.isEof;
 
-        protected Boolean SetEof()
+        protected override Boolean SetEof()
         {
             if( this.Eof ) return true;
 
@@ -81,47 +81,16 @@ namespace Dbf
             Int64 offset = this.binaryReader.BaseStream.Position;
 
             DbfRecordStatus recordStatus = (DbfRecordStatus)this.binaryReader.ReadByte();
-            if( recordStatus == DbfRecordStatus.Deleted )
-            {
-                if( this.options.HasFlag(DbfDataReaderOptions.AllowDeleted) )
-                {
-                    // NOOP.
-                }
-                else
-                {
-                    this.binaryReader.BaseStream.Seek( this.Table.Header.RecordDataLength, SeekOrigin.Current ); // skip-over those bytes. TODO: Is Seek() better than Read() for data we don't care about? will Seek() trigger Random-access behaviour - or only Seek() that extends beyond the current buffer (or two?) or goes in a backwards direction?
-                    return DbfReadResult.Skipped;
-                }
-            }
-            else if( recordStatus == DbfRecordStatus.Eof )
-            {
-                if( this.options.HasFlag(DbfDataReaderOptions.IgnoreEof) )
-                {
-                    // Check the stream length. A "real" EOF should follow.
-                    if( this.SetEof() ) return DbfReadResult.Eof;
 
-                    // Else, NOOP and read as normal, though the data is probably garbage (as in, was-valid-when-written-but-now-probably-meaningless.
-                }
-                else
-                {
-                    return DbfReadResult.Eof;
-                }
-            }
-            else if( recordStatus == DbfRecordStatus.Valid )
+            DbfReadResult initReadResult = ShouldRead( recordStatus, this.options );
+            if( initReadResult == DbfReadResult.Skipped )
             {
-                // NOOP
+                this.binaryReader.BaseStream.Seek( this.Table.Header.RecordDataLength, SeekOrigin.Current ); // skip-over those bytes. TODO: Is Seek() better than Read() for data we don't care about? will Seek() trigger Random-access behaviour - or only Seek() that extends beyond the current buffer (or two?) or goes in a backwards direction?
+                return DbfReadResult.Skipped;
             }
-            else
+            else if( initReadResult == DbfReadResult.Eof )
             {
-                if( this.options.HasFlag(DbfDataReaderOptions.AllowInvalid) )
-                {
-                    // NOOP
-                }
-                else
-                {
-                    this.binaryReader.BaseStream.Seek( this.Table.Header.RecordDataLength, SeekOrigin.Current );
-                    return DbfReadResult.Skipped;
-                }
+                return DbfReadResult.Eof;
             }
 
             //////////////////////
