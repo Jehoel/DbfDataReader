@@ -40,6 +40,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="CdxTests.cs" />
     <Compile Include="Dbase03Tests.cs" />
     <Compile Include="Dbase30Tests.cs" />
     <Compile Include="Dbase31Tests.cs" />
