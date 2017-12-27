@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using Xunit;
 
-using Dbf.CdxReaders;
+using Dbf.Cdx;
+
+using Xunit;
 
 namespace DbfDataReader.NetFx.Tests
 {
@@ -14,8 +13,8 @@ namespace DbfDataReader.NetFx.Tests
         [Fact]
         public void Cdx_reader_should_work()
         {
-            CompactIndex index = CompactIndex.Open( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" );
-            CompactIndexExteriorNode rootNode = (CompactIndexExteriorNode)index.RootNode;
+            CdxFile index = CdxFile.Open( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" );
+            ExteriorCdxNode rootNode = (ExteriorCdxNode)index.RootNode;
             var list = rootNode.GetIndexEntries( index ).ToList();
 
             for( Int32 i = 0; i < list.Count; i++ )
@@ -36,6 +35,8 @@ namespace DbfDataReader.NetFx.Tests
 
                 keyInfo.KeyValue = keyValue;
             }
+
+
 
             String x = "foo";
         }

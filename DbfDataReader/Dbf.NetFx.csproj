@@ -58,7 +58,12 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CdxReaders\CompactIndexHeader.cs" />
+    <Compile Include="Cdx\BaseCdxNode.cs" />
+    <Compile Include="Cdx\CdxFile.cs" />
+    <Compile Include="Cdx\CdxFileHeader.cs" />
+    <Compile Include="Cdx\ExteriorCdxNode.cs" />
+    <Compile Include="Cdx\Enums.cs" />
+    <Compile Include="Cdx\InteriorCdxNode.cs" />
     <Compile Include="DbfTableTypes.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="GlobalSuppressions.cs" />
