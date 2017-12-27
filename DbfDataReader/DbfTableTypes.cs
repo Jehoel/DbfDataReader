@@ -63,7 +63,10 @@ namespace Dbf
             }
         }
 
-        public abstract DbfMemoFile OpenMemoFile(String tableName);
+        public virtual DbfMemoFile OpenMemoFile(String tableName)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class FoxProTableType : DbfTableType

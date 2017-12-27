@@ -125,7 +125,7 @@ namespace Dbf
             {
                 try
                 {
-                    Object value = this.ValueReader.ReadValue( cols[i], reader, this.TextEncoding );
+                    Object value = ValueReader.ReadValue( cols[i], reader, this.TextEncoding );
                     values[i] = value;
                 }
                 catch(EndOfStreamException)
@@ -194,7 +194,7 @@ namespace Dbf
 
                     try
                     {
-                        Object value = this.ValueReader.ReadValue( column, reader, this.TextEncoding );
+                        Object value = ValueReader.ReadValue( column, reader, this.TextEncoding );
                         values[ valuesIdx ] = value;
                         valuesIdx++;
                     }

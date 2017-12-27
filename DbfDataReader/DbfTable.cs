@@ -47,14 +47,14 @@ namespace Dbf
             {
                 DbfHeader header = DbfHeader.Read( reader );
 
-                IDbfTableType tableType = DbfTableType.GetDbfTableType(  )
+                IDbfTableType tableType = DbfTableType.GetDbfTableType( header );
                 
                 List<DbfColumn> columns = new List<DbfColumn>();
                 DbfColumn lastColumn = null;
                 Int32 index = 0;
                 do
                 {
-                    lastColumn = DbfColumn.Read( , reader, index );
+                    lastColumn = DbfColumn.Read( tableType, reader, index );
                     index++;
                     if( lastColumn != null ) columns.Add( lastColumn );
                 }
@@ -76,13 +76,14 @@ namespace Dbf
             using( AsyncBinaryReader reader = new AsyncBinaryReader( fs, Encoding.ASCII ) )
             {
                 DbfHeader header = await DbfHeader.ReadAsync( reader ).ConfigureAwait(false);
-                
+                IDbfTableType tableType = DbfTableType.GetDbfTableType( header );
+
                 List<DbfColumn> columns = new List<DbfColumn>();
                 DbfColumn lastColumn = null;
                 Int32 index = 0;
                 do
                 {
-                    lastColumn = await DbfColumn.ReadAsync( reader, index ).ConfigureAwait(false);
+                    lastColumn = await DbfColumn.ReadAsync( tableType, reader, index ).ConfigureAwait(false);
                     index++;
                     columns.Add( lastColumn );
                 }

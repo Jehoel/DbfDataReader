@@ -223,9 +223,9 @@ namespace Dbf
         HasMemo1   = 0b0000_1000,
 
         // Bits 4-6: "Presence of a SQL table" - no idea what this means.
-        HasSqlTable = 0b
+        //HasSqlTable = 0b
 
-        HasDosMemo = 0b1000_0000,
-        Has
+        //HasDosMemo = 0b1000_0000,
+        //Has
     }
 }

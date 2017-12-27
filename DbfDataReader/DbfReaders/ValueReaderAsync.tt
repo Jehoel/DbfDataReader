@@ -106,7 +106,7 @@ enum State {
 
 static String GetValueReaderCSFileName()
 {
-	return @"C:\git\rss\DbfDataReader\DbfDataReader\DbfDataReader\Readers\ValueReader.cs";
+	return @"C:\git\rss\DbfDataReader\DbfDataReader\DbfDataReader\DbfReaders\ValueReader.cs";
 }
 
 static readonly Regex _readMethod = new Regex( @"^        private static (\w+\??(\[\])?) Read(\w+)\((.*)\)$" );
