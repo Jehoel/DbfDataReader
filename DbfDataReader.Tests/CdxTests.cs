@@ -57,6 +57,14 @@ namespace DbfDataReader.NetFx.Tests
                 .Select( fi => CdxFile.Open( fi.FullName ) )
                 .ToList();
 
+            Boolean noNullsInTagNames = cdxFiles
+                .Select( cdx => cdx.RootNode )
+                .Cast<ExteriorCdxNode>()
+                .SelectMany( node => node.IndexKeys )
+                .All( keyEntry => keyEntry.StringKey.IndexOf('\0') == -1 );
+
+            Assert.True( noNullsInTagNames );
+
             String x = "foo";
         }
     }
