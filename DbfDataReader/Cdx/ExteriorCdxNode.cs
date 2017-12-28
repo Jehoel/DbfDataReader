@@ -8,54 +8,6 @@ namespace Dbf.Cdx
 {
     public sealed class ExteriorCdxNode : BaseCdxNode
     {
-        private ExteriorCdxNode
-        (
-            // Metadata:
-            Int64 offset,
-
-            // Node data:
-            CompactIndexNodeAttributes attributes,
-            UInt16 keyCount,
-            Int32 leftSibling,
-            Int32 rightSibling,
-            UInt16 freeSpace,
-            UInt32 recordNumberMask,
-            Byte duplicateByteCountMask,
-            Byte trailingByteCountMask,
-            Byte recordNumberBitsCount,
-            Byte duplicateCountBitsCount,
-            Byte trailCountBitsCount,
-            Byte recordNumberDuplicateCountTrailingCountBytes,
-            Byte[] indexKeysPacked,
-            CdxKeyEntry[] indexKeys
-        )
-            : base( offset, attributes, keyCount, leftSibling, rightSibling )
-        {
-            this.FreeSpace               = freeSpace;
-            this.RecordNumberMask        = recordNumberMask;
-            this.DuplicateByteCountMask  = duplicateByteCountMask;
-            this.TrailingByteCountMask   = trailingByteCountMask;
-            this.RecordNumberBitsCount   = recordNumberBitsCount;
-            this.DuplicateCountBitsCount = duplicateCountBitsCount;
-            this.TrailCountBitsCount     = trailCountBitsCount;
-            this.IndexKeyEntryLength     = recordNumberDuplicateCountTrailingCountBytes;
-            this.IndexKeysPacked         = indexKeysPacked ?? throw new ArgumentNullException( nameof( indexKeysPacked ) );
-            this.IndexKeys               = indexKeys ?? throw new ArgumentNullException( nameof( indexKeys ) );
-        }
-
-        public UInt16 FreeSpace               { get; }
-        public UInt32 RecordNumberMask        { get; }
-        public Byte   DuplicateByteCountMask  { get; }
-        public Byte   TrailingByteCountMask   { get; }
-        public Byte   RecordNumberBitsCount   { get; }
-        public Byte   DuplicateCountBitsCount { get; }
-        public Byte   TrailCountBitsCount     { get; }
-        /// <summary>Number of bytes holding record number, duplicate count and trailing count</summary>
-        public Byte   IndexKeyEntryLength     { get; }
-        public Byte[] IndexKeysPacked         { get; }
-        public Byte[] IndexKeysUnpacked       { get; }
-        public CdxKeyEntry[] IndexKeys        { get; }
-
         private const Int32 IndexKeyBufferLength = 488;
 
         public static ExteriorCdxNode Read(UInt16 cdxFileHeaderKeyLength, Int64 offset, CompactIndexNodeAttributes attributes, BinaryReader reader)
@@ -181,10 +133,61 @@ namespace Dbf.Cdx
 
                 CdxKeyEntry keyEntry = new CdxKeyEntry( keyData, recordNumber, (Int32)duplicateBytes, (Int32)trailingBytes );
                 entries[i] = keyEntry;
+
+                previousKeyData = keyData;
             }
         }
 
+        private ExteriorCdxNode
+        (
+            // Metadata:
+            Int64 offset,
+
+            // Node data:
+            CompactIndexNodeAttributes attributes,
+            UInt16 keyCount,
+            Int32 leftSibling,
+            Int32 rightSibling,
+            UInt16 freeSpace,
+            UInt32 recordNumberMask,
+            Byte duplicateByteCountMask,
+            Byte trailingByteCountMask,
+            Byte recordNumberBitsCount,
+            Byte duplicateCountBitsCount,
+            Byte trailCountBitsCount,
+            Byte recordNumberDuplicateCountTrailingCountBytes,
+            Byte[] indexKeysPacked,
+            CdxKeyEntry[] indexKeys
+        )
+            : base( offset, attributes, keyCount, leftSibling, rightSibling )
+        {
+            this.FreeSpace               = freeSpace;
+            this.RecordNumberMask        = recordNumberMask;
+            this.DuplicateByteCountMask  = duplicateByteCountMask;
+            this.TrailingByteCountMask   = trailingByteCountMask;
+            this.RecordNumberBitsCount   = recordNumberBitsCount;
+            this.DuplicateCountBitsCount = duplicateCountBitsCount;
+            this.TrailCountBitsCount     = trailCountBitsCount;
+            this.IndexKeyEntryLength     = recordNumberDuplicateCountTrailingCountBytes;
+            this.IndexKeysPacked         = indexKeysPacked ?? throw new ArgumentNullException( nameof( indexKeysPacked ) );
+            this.IndexKeys               = indexKeys ?? throw new ArgumentNullException( nameof( indexKeys ) );
+        }
+
+        public UInt16 FreeSpace               { get; }
+        public UInt32 RecordNumberMask        { get; }
+        public Byte   DuplicateByteCountMask  { get; }
+        public Byte   TrailingByteCountMask   { get; }
+        public Byte   RecordNumberBitsCount   { get; }
+        public Byte   DuplicateCountBitsCount { get; }
+        public Byte   TrailCountBitsCount     { get; }
+        /// <summary>Number of bytes holding record number, duplicate count and trailing count</summary>
+        public Byte   IndexKeyEntryLength     { get; }
+        public Byte[] IndexKeysPacked         { get; }
+        public Byte[] IndexKeysUnpacked       { get; }
+        public CdxKeyEntry[] IndexKeys        { get; }
+
         #if OLD_CODE
+
         public IEnumerable<CdxKeyEntry> GetIndexEntries(CdxFile indexFile)
         {
             BinaryReader reader = indexFile.Reader;
@@ -296,29 +299,8 @@ namespace Dbf.Cdx
                 yield return entry;
             }
         }
+
         #endif
-    }
-
-    [DebuggerDisplay("KeyValue = {KeyValue}, RecordNumber = {RecordNumber}")]
-    public class CdxKeyEntry
-    {
-        private readonly Byte[] keyData;
-
-        internal CdxKeyEntry(Byte[] keyData, UInt32 recordNumber, Int32 duplicateBytes, Int32 trailingBytes)
-        {
-            this.keyData        = keyData;
-            this.DuplicateBytes = duplicateBytes;
-            this.TrailingBytes  = trailingBytes;
-        }
-
-        [CLSCompliant(false)]
-        public   UInt32 RecordNumber   { get; }
-        
-        internal Int32  DuplicateBytes { get; }
-        internal Int32  TrailingBytes  { get; }
-
-        private String keyAsString;
-        public String StringKey => this.keyAsString ?? ( this.keyAsString = Encoding.ASCII.GetString( this.keyData ) );
     }
 
     /// <summary>CDX Key Component info.</summary>
