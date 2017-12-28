@@ -52,5 +52,14 @@ namespace Dbf.Cdx
                 throw;
             }
         }
+
+        public BaseCdxNode ReadNode(UInt32 recordNumber)
+        {
+            this.reader.BaseStream.Seek( recordNumber, SeekOrigin.Begin );
+
+            // TODO: Cache nodes in-memory?
+            BaseCdxNode node = BaseCdxNode.Read( this.Header.KeyLength, this.reader );
+            return node;
+        }
     }
 }

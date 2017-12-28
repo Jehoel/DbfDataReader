@@ -61,7 +61,7 @@ namespace Dbf.Cdx
                 duplicateCountBitsCount,
                 trailCountBitsCount,    
                 recordNumberDuplicateCountTrailingCountBytes,
-                indexKeysPacked,
+//                indexKeysPacked,
                 entries
             );
         }
@@ -188,7 +188,7 @@ namespace Dbf.Cdx
             Byte duplicateCountBitsCount,
             Byte trailCountBitsCount,
             Byte recordNumberDuplicateCountTrailingCountBytes,
-            Byte[] indexKeysPacked,
+//            Byte[] indexKeysPacked,
             CdxKeyEntry[] indexKeys
         )
             : base( offset, attributes, keyCount, leftSibling, rightSibling )
@@ -201,7 +201,7 @@ namespace Dbf.Cdx
             this.DuplicateCountBitsCount = duplicateCountBitsCount;
             this.TrailCountBitsCount     = trailCountBitsCount;
             this.IndexKeyEntryLength     = recordNumberDuplicateCountTrailingCountBytes;
-            this.IndexKeysPacked         = indexKeysPacked ?? throw new ArgumentNullException( nameof( indexKeysPacked ) );
+//            this.IndexKeysPacked         = indexKeysPacked ?? throw new ArgumentNullException( nameof( indexKeysPacked ) );
             this.IndexKeys               = indexKeys ?? throw new ArgumentNullException( nameof( indexKeys ) );
         }
 
@@ -214,8 +214,7 @@ namespace Dbf.Cdx
         public Byte   TrailCountBitsCount     { get; }
         /// <summary>Number of bytes holding record number, duplicate count and trailing count</summary>
         public Byte   IndexKeyEntryLength     { get; }
-        public Byte[] IndexKeysPacked         { get; }
-        public Byte[] IndexKeysUnpacked       { get; }
+//        public Byte[] IndexKeysPacked         { get; }
         public CdxKeyEntry[] IndexKeys        { get; }
 
         #if OLD_CODE

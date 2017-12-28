@@ -67,5 +67,18 @@ namespace DbfDataReader.NetFx.Tests
 
             String x = "foo";
         }
+
+        [Fact]
+        public void Cdx_reader_should_work_3()
+        {
+            const String prefix = @"C:\git\rss\DBD-XBase\t";
+
+            var cdxFiles = new DirectoryInfo( prefix )
+                .GetFiles("*.cdx")
+                .Select( fi => CdxFile.Open( fi.FullName ) )
+                .ToList();
+
+            String x = "Foo";
+        }
     }
 }
