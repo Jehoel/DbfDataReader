@@ -79,6 +79,7 @@ namespace Dbf.Cdx
         {
             if( packed == null ) throw new ArgumentNullException(nameof(packed));
             if( packed.Length != IndexKeyBufferLength /* 488 */ ) throw new ArgumentException("Value must have a length of 488.", nameof(packed));
+            if( packedKeyEntryLength < 2 ) throw new ArgumentException("Packed Key Entries must be at least 2 bytes long.");
 
             Int32 keyValueSrc = packed.Length;
 
@@ -87,27 +88,58 @@ namespace Dbf.Cdx
             Byte[] previousKeyData = null;
             for( Int32 i = 0; i < keyCount; i++ )
             {
+#if DEBUG
+                Byte[] packedEntry = new Byte[ packedKeyEntryLength ]; // this array exists so I can see what the current window of data looks like.
+                Array.Copy( packed, i * packedKeyEntryLength, packedEntry, 0, packedEntry.Length );
+#endif
+
                 Int32 a = i * packedKeyEntryLength; // start of a packed keyEntry
-                
-                // the number of bits in the record-number really doesn't matter, as we can simply take the first 4 bytes then use the mask.
-                // but we'll assert, just to be sure:
-#if DEBUG
-                if( recordNumberInfo.BitCount > 8 * 4 || recordNumberInfo.BitCount < 24 ) throw new NotSupportedException("Unsupported recordNumberInfo.BitCount.");
-#endif
-                Int32 recordNumberSigned = ( packed[ a + 3 ] << 24 ) | ( packed[ a + 2 ] << 16 ) | ( packed[ a + 1 ] << 8 ) | packed[ a + 0 ];
-                UInt32 recordNumber = (UInt32)recordNumberSigned & recordNumberInfo.Mask;
 
-                // We also assume the bit-counts for TrailingBytes and DuplicateBytes summed are below 16.
-                Int32 bi = 16 - trailingBytesInfo.BitCount - duplicateBytesInfo.BitCount;
-#if DEBUG
-                if( bi < 0 ) throw new NotSupportedException("Unsupported trailingBytesInfo.BitCount or duplicateBytesInfo.BitCount.");
-#endif
+                UInt32 recordNumber;
+                {
+                    Int32 recordNumberSigned;
 
-                Int32 trailingAndDuplicateSigned = ( packed[ a + 3 ] << 8 ) | packed[a + 2];
-                UInt16 trailingAndDuplicate = (UInt16)( trailingAndDuplicateSigned >> bi );
+                    // RecordNumbers are in big-endian order.
+                    if( recordNumberInfo.BitCount <= 8 )
+                    {
+                        recordNumberSigned = packed[ a ];
+                    }
+                    else if( recordNumberInfo.BitCount <= 16 )
+                    {
+                        recordNumberSigned = ( packed[ a + 1 ] << 8 ) | packed[ a + 0 ];
+                    }
+                    else if( recordNumberInfo.BitCount <= 24 )
+                    {
+                        recordNumberSigned = ( packed[ a + 2 ] << 16 ) | ( packed[ a + 1 ] << 8 ) | packed[ a + 0 ];
+                    }
+                    else if( recordNumberInfo.BitCount <= 32 )
+                    {
+                        recordNumberSigned = ( packed[ a + 3 ] << 24 ) | ( packed[ a + 2 ] << 16 ) | ( packed[ a + 1 ] << 8 ) | packed[ a + 0 ];
+                    }
+                    else
+                    {
+                        // manual for-loop? but this number will never be bigger than 2^32... so just throw for now.
+                        throw new NotSupportedException("RecordNumber.BitCount values bigger than 32 are not supported.");
+                    }
 
-                UInt32 duplicateBytes = trailingAndDuplicate & duplicateBytesInfo.Mask;
-                UInt32 trailingBytes  = (UInt32)(( trailingAndDuplicate >> duplicateBytesInfo.BitCount ) & trailingBytesInfo.Mask);
+                    recordNumber = (UInt32)recordNumberSigned & recordNumberInfo.Mask;
+                }
+
+                UInt32 duplicateBytes;
+                UInt32 trailingBytes;
+                {
+                    // Get the last two bytes of the array. Note we assume packedKeyEntryLength is >=2
+                    Byte bN  = packed[ a + (packedKeyEntryLength-1) ]; // b[N  ]
+                    Byte bN1 = packed[ a + (packedKeyEntryLength-2) ]; // b[N-1]
+                    Int32 trailingAndDuplicate = ( bN1 << 8 ) | bN;
+
+                    duplicateBytes = (UInt32)( trailingAndDuplicate & duplicateBytesInfo.Mask );
+
+                    /////
+
+                    trailingBytes = (UInt32)( trailingAndDuplicate >> duplicateBytesInfo.BitCount );
+                    trailingBytes &= trailingBytesInfo.Mask;
+                }
 
                 Int32 newBytesCount = (Int32)(keyLength - duplicateBytes - trailingBytes);
 
@@ -126,9 +158,9 @@ namespace Dbf.Cdx
                     keyData[d] = previousKeyData[d];
                 }
 
-                for( UInt32 b = duplicateBytes; b < newBytesCount; b++ )
+                for( UInt32 b = duplicateBytes, src = 0; src < newBytesCount; b++, src++ )
                 {
-                    keyData[b] = packed[ keyValueSrc + b ];
+                    keyData[b] = packed[ keyValueSrc + src ];
                 }
 
                 CdxKeyEntry keyEntry = new CdxKeyEntry( keyData, recordNumber, (Int32)duplicateBytes, (Int32)trailingBytes );

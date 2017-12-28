@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -42,6 +43,19 @@ namespace DbfDataReader.NetFx.Tests
 
             Assert.Equal( expectedIndexTags.Select( t => t.Item1 ), rootNode.IndexKeys.Select( key => key.StringKey ) );
             Assert.Equal( expectedIndexTags.Select( t => t.Item2 ), rootNode.IndexKeys.Select( key => (Int32)key.RecordNumber ) );
+
+            String x = "foo";
+        }
+
+        [Fact]
+        public void Cdx_reader_should_work_2()
+        {
+            const String prefix = @"C:\git\rss\DbfDataReader\DbfDataReader\DbfDataReader.Tests\TestData\foxprodb\";
+
+            var cdxFiles = new DirectoryInfo( prefix )
+                .GetFiles("*.cdx")
+                .Select( fi => CdxFile.Open( fi.FullName ) )
+                .ToList();
 
             String x = "foo";
         }

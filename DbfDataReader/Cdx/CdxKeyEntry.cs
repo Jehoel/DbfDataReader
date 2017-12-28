@@ -12,6 +12,8 @@ namespace Dbf.Cdx
         internal CdxKeyEntry(Byte[] keyData, UInt32 recordNumber, Int32 duplicateBytes, Int32 trailingBytes)
         {
             this.keyData        = keyData;
+
+            this.RecordNumber   = recordNumber;
             this.DuplicateBytes = duplicateBytes;
             this.TrailingBytes  = trailingBytes;
         }
