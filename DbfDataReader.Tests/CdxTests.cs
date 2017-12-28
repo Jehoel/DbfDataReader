@@ -16,26 +16,6 @@ namespace DbfDataReader.NetFx.Tests
         {
             CdxFile index = CdxFile.Open( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" );
             ExteriorCdxNode rootNode = (ExteriorCdxNode)index.RootNode;
-            var list = rootNode.GetIndexEntries( index ).ToList();
-
-            for( Int32 i = 0; i < list.Count; i++ )
-            {
-                var keyInfo = list[i];
-
-                String prefix = String.Empty;
-                if( keyInfo.DuplicateBytes > 0 )
-                {
-                    Assert.True( i > 0 );
-
-                    // Copy the first (duplicate) characters from the previous key as a prefix.
-                    prefix = list[i-1].KeyValue.Substring( 0, keyInfo.DuplicateBytes );
-                }
-
-                String keyValue = Encoding.ASCII.GetString( rootNode.IndexKeys, keyInfo.KeyValueIndex0, keyInfo.KeyValueLength );
-                keyValue = prefix + keyValue;
-
-                keyInfo.KeyValue = keyValue;
-            }
 
             Tuple<String,Int32>[] expectedIndexTags = new Tuple<String,Int32>[]
             {
@@ -60,8 +40,8 @@ namespace DbfDataReader.NetFx.Tests
                 Tuple.Create("W_PHONE", 864256 )
             };
 
-            Assert.Equal( expectedIndexTags.Select( t => t.Item1 ), list.Select( e => e.KeyValue ) );
-            Assert.Equal( expectedIndexTags.Select( t => t.Item1 ), list.Select( e => e.KeyValue ) );
+            Assert.Equal( expectedIndexTags.Select( t => t.Item1 ), rootNode.IndexKeys.Select( key => key.StringKey ) );
+            Assert.Equal( expectedIndexTags.Select( t => t.Item2 ), rootNode.IndexKeys.Select( key => (Int32)key.RecordNumber ) );
 
             String x = "foo";
         }

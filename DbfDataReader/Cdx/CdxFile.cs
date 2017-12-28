@@ -39,7 +39,7 @@ namespace Dbf.Cdx
 
                 rdr.BaseStream.Seek( header.RootNodePointer, SeekOrigin.Begin );
 
-                BaseCdxNode rootNode = BaseCdxNode.Read( rdr );
+                BaseCdxNode rootNode = BaseCdxNode.Read( header.KeyLength, rdr );
 
                 // The root node (and its siblings? or is it limited to only one node?) is special
                 // ...its keys are actually "tag names" which are the names of the sub-indexes it contains.

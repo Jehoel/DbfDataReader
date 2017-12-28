@@ -19,6 +19,8 @@ namespace Dbf
 
         public static IDbfTableType GetDbfTableType(DbfHeader tableHeader)
         {
+            if( tableHeader == null ) throw new ArgumentNullException(nameof(tableHeader));
+
             if( tableHeader.IsFoxPro )
             {
                 return FoxProTableType.Instance;

@@ -15,6 +15,7 @@
 			<Word>DBase</Word>
 			<Word>Ascii</Word>
 			<Word>DateTime</Word>
+			<Word>cdx</Word>
 		</Recognized>
 		<Deprecated>
 			<Term PreferredAlternate=""></Term>

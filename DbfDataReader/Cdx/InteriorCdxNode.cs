@@ -7,6 +7,7 @@ namespace Dbf.Cdx
     {
         private InteriorCdxNode(
             Int64 offset,
+
             CompactIndexNodeAttributes attributes,
             UInt16 keyCount,
             Int32 leftSibling,
@@ -20,7 +21,7 @@ namespace Dbf.Cdx
         
         public Byte[] KeyValue { get; }
 
-        internal static InteriorCdxNode Read(Int64 offset, CompactIndexNodeAttributes attributes, BinaryReader reader)
+        internal static InteriorCdxNode Read(UInt16 cdxFileHeaderKeyLength, Int64 offset, CompactIndexNodeAttributes attributes, BinaryReader reader)
         {
             UInt16 keyCount     = reader.ReadUInt16();
             Int32  leftSibling  = reader.ReadInt32();
@@ -29,6 +30,7 @@ namespace Dbf.Cdx
 
             return new InteriorCdxNode(
                 offset,
+
                 attributes,
                 keyCount,
                 leftSibling,

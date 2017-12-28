@@ -65,6 +65,9 @@ namespace Dbf
 
         public static DbfColumn Read(IDbfTableType tableType, BinaryReader reader, Int32 index)
         {
+            if( tableType == null ) throw new ArgumentNullException(nameof(tableType));
+            if( reader == null ) throw new ArgumentNullException(nameof(reader));
+
             String name = ReadName( reader );
             if( name == null ) return null;
 

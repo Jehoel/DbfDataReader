@@ -61,6 +61,8 @@ namespace Dbf.Cdx
 
         public static CdxFileHeader Read(BinaryReader reader)
         {
+            if( reader == null ) throw new ArgumentNullException(nameof(reader));
+
             Int64 start = reader.BaseStream.Position;
 
             UInt32 rootNodePointer         = reader.ReadUInt32();
