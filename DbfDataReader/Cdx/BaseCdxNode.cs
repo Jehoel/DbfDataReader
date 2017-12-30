@@ -10,6 +10,7 @@ namespace Dbf.Cdx
         (
             // Metadata:
             Int64 offset,
+            CdxFileHeader indexHeader,
             // Node data:
             CompactIndexNodeAttributes attributes,
             UInt16 keyCount,
@@ -24,33 +25,28 @@ namespace Dbf.Cdx
             this.RightSibling = rightSibling;
         }
 
+        public CdxFileHeader              IndexHeader  { get; }
+
         public Int64                      Offset       { get; }
         public CompactIndexNodeAttributes Attributes   { get; }
         public UInt16                     KeyCount     { get; }
         public Int32                      LeftSibling  { get; }
         public Int32                      RightSibling { get; }
 
-        public static BaseCdxNode Read(UInt16 cdxFileHeaderKeyLength, BinaryReader reader, Boolean readCdxFileHeader)
+        public static BaseCdxNode Read(CdxFileHeader indexHeader, BinaryReader reader)
         {
             if( reader == null ) throw new ArgumentNullException(nameof(reader));
-
-            if( readCdxFileHeader )
-            {
-                CdxFileHeader header = CdxFileHeader.Read( reader );
-
-                reader.BaseStream.Seek( header.RootNodePointer, SeekOrigin.Begin );
-            }
 
             // TODO: Confirm that "Leaf Node" == External Node, and !LeafNode == "Interior Node"...
             Int64 offset = reader.BaseStream.Position;
             CompactIndexNodeAttributes attributes = (CompactIndexNodeAttributes)reader.ReadUInt16();
             if( attributes.HasFlag( CompactIndexNodeAttributes.LeafNode ) )
             {
-                return ExteriorCdxNode.Read( cdxFileHeaderKeyLength, offset, attributes, reader );
+                return ExteriorCdxNode.Read( indexHeader, offset, attributes, reader );
             }
             else
             {
-                return InteriorCdxNode.Read( cdxFileHeaderKeyLength, offset, attributes, reader );
+                return InteriorCdxNode.Read( indexHeader, offset, attributes, reader );
             }
         }
     }

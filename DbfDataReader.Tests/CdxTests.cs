@@ -46,7 +46,9 @@ namespace DbfDataReader.NetFx.Tests
 
             foreach( CdxKeyEntry key in rootNode.IndexKeys )
             {
-                BaseCdxNode root2Node = index.ReadNode( key.RecordNumber );
+                BaseCdxNode root2Node = index.ReadCompactIndex( key.RecordNumber );
+
+                
 
                 String y = "bar";
             }

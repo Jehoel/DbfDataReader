@@ -39,7 +39,7 @@ namespace Dbf.Cdx
 
                 rdr.BaseStream.Seek( header.RootNodePointer, SeekOrigin.Begin );
 
-                BaseCdxNode rootNode = BaseCdxNode.Read( header.KeyLength, rdr, readCdxFileHeader: false );
+                BaseCdxNode rootNode = BaseCdxNode.Read( header, rdr );
 
                 // The root node (and its siblings? or is it limited to only one node?) is special
                 // ...its keys are actually "tag names" which are the names of the sub-indexes it contains.
@@ -53,12 +53,26 @@ namespace Dbf.Cdx
             }
         }
 
+        // TODO: The return-type of this function should be a derived type, e.g. CompactIndexRoot or something to avoid confusion.
+        public BaseCdxNode ReadCompactIndex(UInt32 compactIndexOffsetInCompoundIndexFile)
+        {
+            this.reader.BaseStream.Seek( compactIndexOffsetInCompoundIndexFile, SeekOrigin.Begin );
+
+            CdxFileHeader header = CdxFileHeader.Read( this.reader );
+
+            this.reader.BaseStream.Seek( header.RootNodePointer, SeekOrigin.Begin );
+
+            // TODO: Cache nodes in-memory?
+            BaseCdxNode node = BaseCdxNode.Read( header, this.reader );
+            return node;
+        }
+
         public BaseCdxNode ReadNode(UInt32 recordNumber)
         {
             this.reader.BaseStream.Seek( recordNumber, SeekOrigin.Begin );
 
             // TODO: Cache nodes in-memory?
-            BaseCdxNode node = BaseCdxNode.Read( this.Header.KeyLength, this.reader, readCdxFileHeader: true );
+            BaseCdxNode node = BaseCdxNode.Read( this.Header, this.reader );
             return node;
         }
     }
