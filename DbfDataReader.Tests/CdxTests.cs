@@ -44,6 +44,13 @@ namespace DbfDataReader.NetFx.Tests
             Assert.Equal( expectedIndexTags.Select( t => t.Item1 ), rootNode.IndexKeys.Select( key => key.StringKey ) );
             Assert.Equal( expectedIndexTags.Select( t => t.Item2 ), rootNode.IndexKeys.Select( key => (Int32)key.RecordNumber ) );
 
+            foreach( CdxKeyEntry key in rootNode.IndexKeys )
+            {
+                BaseCdxNode root2Node = index.ReadNode( key.RecordNumber );
+
+                String y = "bar";
+            }
+
             String x = "foo";
         }
 

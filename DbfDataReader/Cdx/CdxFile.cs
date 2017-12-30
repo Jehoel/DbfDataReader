@@ -39,7 +39,7 @@ namespace Dbf.Cdx
 
                 rdr.BaseStream.Seek( header.RootNodePointer, SeekOrigin.Begin );
 
-                BaseCdxNode rootNode = BaseCdxNode.Read( header.KeyLength, rdr );
+                BaseCdxNode rootNode = BaseCdxNode.Read( header.KeyLength, rdr, readCdxFileHeader: false );
 
                 // The root node (and its siblings? or is it limited to only one node?) is special
                 // ...its keys are actually "tag names" which are the names of the sub-indexes it contains.
@@ -58,7 +58,7 @@ namespace Dbf.Cdx
             this.reader.BaseStream.Seek( recordNumber, SeekOrigin.Begin );
 
             // TODO: Cache nodes in-memory?
-            BaseCdxNode node = BaseCdxNode.Read( this.Header.KeyLength, this.reader );
+            BaseCdxNode node = BaseCdxNode.Read( this.Header.KeyLength, this.reader, readCdxFileHeader: true );
             return node;
         }
     }
