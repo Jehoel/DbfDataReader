@@ -10,7 +10,7 @@ namespace Dbf.Cdx
     {
         private const Int32 IndexKeyBufferLength = 488;
 
-        public static ExteriorCdxNode Read(UInt16 cdxFileHeaderKeyLength, Int64 offset, CompactIndexNodeAttributes attributes, BinaryReader reader)
+        public static ExteriorCdxNode Read(CdxFileHeader indexHeader, Int64 offset, CompactIndexNodeAttributes attributes, BinaryReader reader)
         {
             if( reader == null ) throw new ArgumentNullException(nameof(reader));
 
@@ -37,7 +37,7 @@ namespace Dbf.Cdx
             CdxKeyEntry[] entries;
             UnpackIndexKeys(
                 keyCount,
-                cdxFileHeaderKeyLength,
+                indexHeader.KeyLength,
                 recordNumberDuplicateCountTrailingCountBytes,
                 new KeyCmpt( recordNumberMask, recordNumberBitsCount ),
                 new KeyCmpt( duplicateByteCountMask, duplicateCountBitsCount ),
@@ -48,6 +48,7 @@ namespace Dbf.Cdx
 
             return new ExteriorCdxNode(
                 offset,
+                indexHeader,
 
                 attributes,
                 keyCount,
@@ -61,7 +62,6 @@ namespace Dbf.Cdx
                 duplicateCountBitsCount,
                 trailCountBitsCount,    
                 recordNumberDuplicateCountTrailingCountBytes,
-//                indexKeysPacked,
                 entries
             );
         }
@@ -174,6 +174,7 @@ namespace Dbf.Cdx
         (
             // Metadata:
             Int64 offset,
+            CdxFileHeader indexHeader,
 
             // Node data:
             CompactIndexNodeAttributes attributes,
@@ -188,10 +189,9 @@ namespace Dbf.Cdx
             Byte duplicateCountBitsCount,
             Byte trailCountBitsCount,
             Byte recordNumberDuplicateCountTrailingCountBytes,
-//            Byte[] indexKeysPacked,
             CdxKeyEntry[] indexKeys
         )
-            : base( offset, attributes, keyCount, leftSibling, rightSibling )
+            : base( offset, indexHeader, attributes, keyCount, leftSibling, rightSibling )
         {
             this.FreeSpace               = freeSpace;
             this.RecordNumberMask        = recordNumberMask;
@@ -214,124 +214,7 @@ namespace Dbf.Cdx
         public Byte   TrailCountBitsCount     { get; }
         /// <summary>Number of bytes holding record number, duplicate count and trailing count</summary>
         public Byte   IndexKeyEntryLength     { get; }
-//        public Byte[] IndexKeysPacked         { get; }
         public CdxKeyEntry[] IndexKeys        { get; }
-
-        #if OLD_CODE
-
-        public IEnumerable<CdxKeyEntry> GetIndexEntries(CdxFile indexFile)
-        {
-            BinaryReader reader = indexFile.Reader;
-
-            // Move reader to the start of the IndexKeys block, at 24 bytes offset from the start of the ExteriorNode.
-            reader.BaseStream.Seek( this.Offset + 24, SeekOrigin.Begin );
-
-            Int64 end = this.Offset + 512; // TODO: limit this to non-garbage data.
-
-            if( this.IndexKeyEntryLength > 8 ) throw new InvalidOperationException("IndexKey entries must be 8 bytes long or shorter."); // because we use UInt64 for bitwise operations.
-
-            Int32 totalBits = this.RecordNumberBitsCount + this.DuplicateCountBitsCount + this.TrailCountBitsCount;
-            if( this.IndexKeyEntryLength * 8 != totalBits ) throw new InvalidOperationException("IndexKeyEntryLength does not match the combined bit count.");
-            // for now, we assume all bit-lengths occupy full bytes:
-            //if( this.RecordNumberBitsCount   % 8 != 0 ) throw new InvalidOperationException("RecordNumberBitsCount is not an integral number of bytes.");
-            //if( this.DuplicateCountBitsCount % 8 != 0 ) throw new InvalidOperationException("DuplicateCountBitsCount is not an integral number of bytes.");
-            //if( this.TrailCountBitsCount     % 8 != 0 ) throw new InvalidOperationException("TrailCountBitsCount is not an integral number of bytes.");
-
-            /*Byte[] entryBuffer = new Byte[ this.IndexKeyEntryLength ];
-
-            while( reader.BaseStream.Position < end )
-            {
-                {
-                    Int32 read = reader.Read( entryBuffer, 0, this.IndexKeyEntryLength );
-                    if( read != this.IndexKeyEntryLength ) throw new InvalidOperationException("Could not read all bytes of an entry.");
-
-                    // reverse the array because BitConverter will use native byte ordering:
-                    //if( BitConverter.IsLittleEndian ) Array.Reverse( entryBuffer );
-                }
-                
-                UInt64 entry = BitConverter.ToUInt64( entryBuffer, 0 );
-
-                // entry format:
-                // <record-number><duplicate-bytes-count><trail-count>
-                Int32 shiftToGetRecordNumber        = 64 - this.RecordNumberBitsCount;
-                Int32 shiftToGetDuplicateBytesCount = ( 64 - this.RecordNumberBitsCount ) - this.DuplicateCountBitsCount;
-                Int32 shiftToGetTrailBytesCount     = ( ( 64 - this.RecordNumberBitsCount ) - this.DuplicateCountBitsCount ) - this.TrailCountBitsCount;
-
-                UInt64 recordNumber        = ( entry >> shiftToGetRecordNumber        ) & this.RecordNumberMask;
-                UInt64 duplicateBytesCount = ( entry >> shiftToGetDuplicateBytesCount ) & this.DuplicateByteCountMask;
-                UInt64 trailBytesCount     = ( entry >> shiftToGetTrailBytesCount     ) & this.TrailingByteCountMask;
-
-                yield return new CompactIndexExteriorNodeIndexEntry( (UInt32)recordNumber, (UInt32)duplicateBytesCount, (UInt32)trailBytesCount );
-            }*/
-
-            Boolean supportedBitPacking =
-                this.IndexKeyEntryLength == 4 &&
-                this.RecordNumberBitsCount == 24 &&
-                this.RecordNumberMask == 0x00FFFFFF &&
-                this.DuplicateCountBitsCount == 4 &&
-                this.DuplicateByteCountMask == 0x0F &&
-                this.TrailCountBitsCount == 4 &&
-                this.TrailingByteCountMask == 0x0F;
-
-            if( !supportedBitPacking ) throw new NotSupportedException("Unsupported bit-packing options.");
-
-            //////
-
-            Int32 keyValueSrc = IndexKeyBufferLength; // 488
-
-            for( Int32 i = 0; i < this.KeyCount; i++ )
-            {
-                Byte[] entryBuffer = new Byte[ this.IndexKeyEntryLength ];
-                {
-                    Int32 read = reader.Read( entryBuffer, 0, this.IndexKeyEntryLength );
-                    if( read != this.IndexKeyEntryLength ) throw new InvalidOperationException("Could not read all bytes of an entry.");
-                }
-
-                Int32 recordNumberInt =
-                    ( entryBuffer[3] << 24 ) |
-                    ( entryBuffer[2] << 16 ) |
-                    ( entryBuffer[1] <<  8 ) |
-                    ( entryBuffer[0] );
-
-                Int64 recordNumber64 = recordNumberInt & this.RecordNumberMask;
-                UInt32 recordNumber = (UInt32)recordNumber64;
-
-                Int32 bi = 16 - this.TrailCountBitsCount - this.DuplicateCountBitsCount;
-
-                //////
-
-                Int32 trailAndDupeInt = ( entryBuffer[3] << 8 ) | ( entryBuffer[2] );
-                UInt16 trailAndDupe = (UInt16)( trailAndDupeInt >> bi );
-
-                Int32 duplicateBytesCount = ( i == 0 ) ? 0 : ( trailAndDupe & this.DuplicateByteCountMask );
-                Int32 trailingBytesCount  = ( trailAndDupe >> this.DuplicateCountBitsCount ) & this.TrailingByteCountMask;
-
-                Int32 newBytesCount = indexFile.Header.KeyLength - duplicateBytesCount - trailingBytesCount;
-
-                keyValueSrc -= newBytesCount;
-                Int32 keyValueStart = keyValueSrc;
-
-                CdxKeyEntry entry = new CdxKeyEntry()
-                {
-                    EntryBytes = entryBuffer,
-                    RecordNumber = recordNumber,
-                    DuplicateBytes = duplicateBytesCount,
-                    TrailingBytes = trailingBytesCount,
-
-                    KeyValueIndex0 = keyValueStart,
-                    KeyValueIndexN = keyValueStart + newBytesCount
-                };
-
-//                if( duplicateBytesCount > 0 )
-//                {
-//                    entry.KeyValueRanges.Add( new Range( ,  ) );
-//                }
-
-                yield return entry;
-            }
-        }
-
-        #endif
     }
 
     /// <summary>CDX Key Component info.</summary>
