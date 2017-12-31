@@ -152,7 +152,7 @@ namespace Dbf.Cdx
 
                 //////////////////
 
-                Byte[] keyData = new Byte[ keyLength - trailingBytes ];
+                Byte[] keyData = new Byte[ keyLength ];// - trailingBytes ];
                 for( UInt32 d = 0; d < duplicateBytes; d++ )
                 {
                     keyData[d] = previousKeyData[d];

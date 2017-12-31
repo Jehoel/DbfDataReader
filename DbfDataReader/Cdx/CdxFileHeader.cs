@@ -32,6 +32,8 @@ namespace Dbf.Cdx
 #endif
             
             return new CdxFileHeader(
+                start,
+
                 rootNodePointer,
                 freeNodeListPointer,
                 reserved1,
@@ -48,8 +50,10 @@ namespace Dbf.Cdx
             );
         }
 
-        private CdxFileHeader(UInt32 rootNodePointer, Int32 freeNodeListPointer, UInt32 reserved1, UInt16 keyLength, CompactIndexOptions options, Byte signature, Byte[] reserved2, IndexOrder order, UInt16 reserved3, UInt16 forExpressionPoolLength, UInt16 reserved4, UInt16 keyExpressionPoolLength, Byte[] keyExpressionPool)
+        private CdxFileHeader(Int64 offset, UInt32 rootNodePointer, Int32 freeNodeListPointer, UInt32 reserved1, UInt16 keyLength, CompactIndexOptions options, Byte signature, Byte[] reserved2, IndexOrder order, UInt16 reserved3, UInt16 forExpressionPoolLength, UInt16 reserved4, UInt16 keyExpressionPoolLength, Byte[] keyExpressionPool)
         {
+            this.Offset = offset;
+
             this.RootNodePointer = rootNodePointer;
             this.FreeNodeListPointer = freeNodeListPointer;
             this.Reserved1 = reserved1;
@@ -64,6 +68,9 @@ namespace Dbf.Cdx
             this.KeyExpressionPoolLength = keyExpressionPoolLength;
             this.KeyExpressionPool = keyExpressionPool;
         }
+
+        /// <summary>Offset in the index file this header was read at.</summary>
+        public Int64 Offset { get; }
 
         /// <summary>Pointer to root node</summary>
         public UInt32 RootNodePointer { get; }

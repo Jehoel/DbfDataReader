@@ -18,6 +18,8 @@ namespace Dbf.Cdx
             this.TrailingBytes  = trailingBytes;
         }
 
+        public Byte[] KeyBytes => this.keyData;
+
         [CLSCompliant(false)]
         public   UInt32 RecordNumber   { get; }
         

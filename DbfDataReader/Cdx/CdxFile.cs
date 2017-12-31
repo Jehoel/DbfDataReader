@@ -10,8 +10,9 @@ namespace Dbf.Cdx
     {
         private readonly BinaryReader reader;
 
-        private CdxFile(CdxFileHeader header, BaseCdxNode rootNode, BinaryReader reader)
+        private CdxFile(FileInfo fileInfo, CdxFileHeader header, BaseCdxNode rootNode, BinaryReader reader)
         {
+            this.FileInfo = fileInfo;
             this.Header   = header;
             this.RootNode = rootNode;
             this.reader   = reader;
@@ -23,6 +24,8 @@ namespace Dbf.Cdx
         }
 
         internal BinaryReader Reader => this.reader;
+
+        public FileInfo FileInfo { get; }
 
         public CdxFileHeader Header { get; }
 
@@ -44,7 +47,7 @@ namespace Dbf.Cdx
                 // The root node (and its siblings? or is it limited to only one node?) is special
                 // ...its keys are actually "tag names" which are the names of the sub-indexes it contains.
 
-                return new CdxFile( header, rootNode, rdr );
+                return new CdxFile( new FileInfo( fileName ), header, rootNode, rdr );
             }
             catch
             {
@@ -67,12 +70,12 @@ namespace Dbf.Cdx
             return node;
         }
 
-        public BaseCdxNode ReadNode(UInt32 recordNumber)
+        public BaseCdxNode ReadNode(BaseCdxNode parentNode, UInt32 recordNumber)
         {
             this.reader.BaseStream.Seek( recordNumber, SeekOrigin.Begin );
 
             // TODO: Cache nodes in-memory?
-            BaseCdxNode node = BaseCdxNode.Read( this.Header, this.reader );
+            BaseCdxNode node = BaseCdxNode.Read( parentNode.IndexHeader, this.reader );
             return node;
         }
     }

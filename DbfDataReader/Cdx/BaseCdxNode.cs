@@ -19,15 +19,17 @@ namespace Dbf.Cdx
         )
         {
             this.Offset       = offset;
+            this.IndexHeader  = indexHeader;
+
             this.Attributes   = attributes;
             this.KeyCount     = keyCount;
             this.LeftSibling  = leftSibling;
             this.RightSibling = rightSibling;
         }
 
-        public CdxFileHeader              IndexHeader  { get; }
-
         public Int64                      Offset       { get; }
+        public CdxFileHeader              IndexHeader  { get; }
+        
         public CompactIndexNodeAttributes Attributes   { get; }
         public UInt16                     KeyCount     { get; }
         public Int32                      LeftSibling  { get; }
@@ -46,6 +48,7 @@ namespace Dbf.Cdx
             }
             else
             {
+                //return ExteriorCdxNode.Read( indexHeader, offset, attributes, reader );
                 return InteriorCdxNode.Read( indexHeader, offset, attributes, reader );
             }
         }

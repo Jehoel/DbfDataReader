@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dbf.NetFx", "DbfDataReader\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DbfDataReader.NetFx.Tests", "DbfDataReader.Tests\DbfDataReader.NetFx.Tests.csproj", "{B44A6608-F540-42F2-A45A-0D53536793E2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dbf.Argh", "Dbf.Argh\Dbf.Argh.csproj", "{407BAA28-D6AC-4707-8143-C6155F541B07}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{B44A6608-F540-42F2-A45A-0D53536793E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B44A6608-F540-42F2-A45A-0D53536793E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B44A6608-F540-42F2-A45A-0D53536793E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{407BAA28-D6AC-4707-8143-C6155F541B07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{407BAA28-D6AC-4707-8143-C6155F541B07}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{407BAA28-D6AC-4707-8143-C6155F541B07}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{407BAA28-D6AC-4707-8143-C6155F541B07}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

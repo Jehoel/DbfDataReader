@@ -46,14 +46,52 @@ namespace DbfDataReader.NetFx.Tests
 
             foreach( CdxKeyEntry key in rootNode.IndexKeys )
             {
-                BaseCdxNode root2Node = index.ReadCompactIndex( key.RecordNumber );
-
+                if( key.StringKey != "KEY" ) continue;
                 
+                InteriorCdxNode root2Node = (InteriorCdxNode)index.ReadCompactIndex( key.RecordNumber );
 
+                Int32 keyLength = root2Node.IndexHeader.KeyLength;
+                Int32 recordLength = keyLength + 4;
+
+                List<IndexEntry> indexKeyEntries = new List<IndexEntry>( root2Node.KeyCount );
+                for( Int32 i = 0; i < root2Node.KeyCount; i++ )
+                {
+                    IndexEntry entry = IndexEntry.Read( root2Node.KeyValues, keyLength, i );
+                    indexKeyEntries.Add( entry );
+                }
+                
                 String y = "bar";
             }
 
             String x = "foo";
+        }
+
+        class IndexEntry
+        {
+            //public Int64 Offset { get; }
+
+            public Byte[] Key { get; }
+            public Byte[] Hex { get; }
+
+            public IndexEntry(/*Int64 offset,*/ Byte[] key, Byte[] hex)
+            {
+                //this.Offset = offset;
+                this.Key    = key;
+                this.Hex    = hex;
+            }
+
+            public static IndexEntry Read(Byte[] keyBuffer, Int32 keyLength, Int32 indexEntryIdx)
+            {
+                Int32 startIdx = (keyLength + 4) * indexEntryIdx;
+
+                Byte[] key = new Byte[ keyLength ];
+                Array.Copy( keyBuffer, startIdx, key, 0, keyLength );
+
+                Byte[] hex = new Byte[4];
+                Array.Copy( keyBuffer, startIdx + keyLength, hex, 0, 4 );
+
+                return new IndexEntry( key, hex );
+            }
         }
 
         [Fact]
