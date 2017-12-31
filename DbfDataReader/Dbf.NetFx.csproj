@@ -64,7 +64,7 @@
     <Compile Include="Cdx\CdxFile.cs" />
     <Compile Include="Cdx\CdxFileHeader.cs" />
     <Compile Include="Cdx\CdxKeyEntry.cs" />
-    <Compile Include="Cdx\ExteriorCdxNode.cs" />
+    <Compile Include="Cdx\LeafCdxNode.cs" />
     <Compile Include="Cdx\Enums.cs" />
     <Compile Include="Cdx\InteriorCdxNode.cs" />
     <Compile Include="DbfTableTypes.cs" />

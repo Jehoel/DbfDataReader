@@ -24,7 +24,7 @@ namespace Dbf.Argh
 		public static void DumpIndex(String fileName)
 		{
 			CdxFile indexFile = CdxFile.Open( fileName );
-			ExteriorCdxNode rootNode = (ExteriorCdxNode)indexFile.RootNode;
+			LeafCdxNode rootNode = (LeafCdxNode)indexFile.RootNode;
 
 			///////////////////////////////////////
 
@@ -79,7 +79,7 @@ namespace Dbf.Argh
 					{
 						output.Add( new Object[] { "Interior", intNode.Attributes, intNode.LeftSibling, intNode.RightSibling, intNode.KeyCount, intNode.KeyValues } );
 					}
-					else if( node is ExteriorCdxNode extNode )
+					else if( node is LeafCdxNode extNode )
 					{
 						output.Add( new Object[] { "Exterior", extNode.Attributes, extNode.LeftSibling, extNode.RightSibling, extNode.KeyCount, "" } );
 					}
@@ -98,7 +98,7 @@ namespace Dbf.Argh
 						output.AddRange( intNode.KeyEntries.Select( ke => DumpInteriorKeyEntry( ke ) ) );
 						ConsoleUtility.PrintArray( output );
 					}
-					else if( node is ExteriorCdxNode extNode )
+					else if( node is LeafCdxNode extNode )
 					{
 						Console.WriteLine("Exterior node keys:");
 						Console.WriteLine();
@@ -127,7 +127,7 @@ namespace Dbf.Argh
 			String expr = Encoding.ASCII.GetString( h.KeyExpressionPool, 0, h.KeyExpressionPoolLength );
 			String ordr = h.Order.ToString();
 			String uniq = h.Options.HasFlag( CompactIndexOptions.Unique ) ? "True" : "False";
-			String type = rootNode is ExteriorCdxNode ? "Exterior" : "Interior";
+			String type = rootNode is LeafCdxNode ? "Exterior" : "Interior";
 			Object klen = h.KeyLength;
 			String filt = h.Options.HasFlag( CompactIndexOptions.HasForClause ) ?
 				Encoding.ASCII.GetString( h.KeyExpressionPool, h.KeyExpressionPoolLength, h.ForExpressionPoolLength ) :

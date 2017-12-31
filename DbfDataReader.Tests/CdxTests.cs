@@ -16,7 +16,7 @@ namespace DbfDataReader.NetFx.Tests
         public void Cdx_reader_should_work()
         {
             CdxFile index = CdxFile.Open( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" );
-            ExteriorCdxNode rootNode = (ExteriorCdxNode)index.RootNode;
+            LeafCdxNode rootNode = (LeafCdxNode)index.RootNode;
 
             Tuple<String,Int32>[] expectedIndexTags = new Tuple<String,Int32>[]
             {
@@ -106,7 +106,7 @@ namespace DbfDataReader.NetFx.Tests
 
             Boolean noNullsInTagNames = cdxFiles
                 .Select( cdx => cdx.RootNode )
-                .Cast<ExteriorCdxNode>()
+                .Cast<LeafCdxNode>()
                 .SelectMany( node => node.IndexKeys )
                 .All( keyEntry => keyEntry.StringKey.IndexOf('\0') == -1 );
 

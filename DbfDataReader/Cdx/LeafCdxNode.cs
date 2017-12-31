@@ -6,11 +6,11 @@ using System.Text;
 
 namespace Dbf.Cdx
 {
-    public sealed class ExteriorCdxNode : BaseCdxNode
+    public sealed class LeafCdxNode : BaseCdxNode
     {
         private const Int32 IndexKeyBufferLength = 488;
 
-        public static ExteriorCdxNode Read(CdxFileHeader indexHeader, Int64 offset, CompactIndexNodeAttributes attributes, BinaryReader reader)
+        public static LeafCdxNode Read(CdxFileHeader indexHeader, Int64 offset, CdxNodeAttributes attributes, BinaryReader reader)
         {
             if( reader == null ) throw new ArgumentNullException(nameof(reader));
 
@@ -46,7 +46,7 @@ namespace Dbf.Cdx
                 out entries
             );
 
-            return new ExteriorCdxNode(
+            return new LeafCdxNode(
                 offset,
                 indexHeader,
 
@@ -170,14 +170,14 @@ namespace Dbf.Cdx
             }
         }
 
-        private ExteriorCdxNode
+        private LeafCdxNode
         (
             // Metadata:
             Int64 offset,
             CdxFileHeader indexHeader,
 
             // Node data:
-            CompactIndexNodeAttributes attributes,
+            CdxNodeAttributes attributes,
             UInt16 keyCount,
             Int32 leftSibling,
             Int32 rightSibling,

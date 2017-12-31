@@ -19,7 +19,7 @@ namespace Dbf.Cdx
     }
 
     [Flags]
-    public enum CompactIndexNodeAttributes : ushort
+    public enum CdxNodeAttributes : ushort
     {
         IndexNode = 0,
         RootNode  = 1,

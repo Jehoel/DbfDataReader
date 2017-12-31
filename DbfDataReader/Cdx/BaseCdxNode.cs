@@ -12,7 +12,7 @@ namespace Dbf.Cdx
             Int64 offset,
             CdxFileHeader indexHeader,
             // Node data:
-            CompactIndexNodeAttributes attributes,
+            CdxNodeAttributes attributes,
             UInt16 keyCount,
             Int32 leftSibling,
             Int32 rightSibling
@@ -30,7 +30,7 @@ namespace Dbf.Cdx
         public Int64                      Offset       { get; }
         public CdxFileHeader              IndexHeader  { get; }
         
-        public CompactIndexNodeAttributes Attributes   { get; }
+        public CdxNodeAttributes Attributes   { get; }
         public UInt16                     KeyCount     { get; }
         public Int32                      LeftSibling  { get; }
         public Int32                      RightSibling { get; }
@@ -41,10 +41,10 @@ namespace Dbf.Cdx
 
             // TODO: Confirm that "Leaf Node" == External Node, and !LeafNode == "Interior Node"...
             Int64 offset = reader.BaseStream.Position;
-            CompactIndexNodeAttributes attributes = (CompactIndexNodeAttributes)reader.ReadUInt16();
-            if( attributes.HasFlag( CompactIndexNodeAttributes.LeafNode ) )
+            CdxNodeAttributes attributes = (CdxNodeAttributes)reader.ReadUInt16();
+            if( attributes.HasFlag( CdxNodeAttributes.LeafNode ) )
             {
-                return ExteriorCdxNode.Read( indexHeader, offset, attributes, reader );
+                return LeafCdxNode.Read( indexHeader, offset, attributes, reader );
             }
             else
             {
