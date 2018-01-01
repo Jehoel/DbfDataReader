@@ -14,13 +14,15 @@ namespace Dbf.Cdx
         /// <summary>DBF record number for this key (so if it's an exact match there's no need to traverse-down to a Leaf Node).</summary>
         public UInt32 DbfRecordNumber { get; }
 
-        /// <summary>Location in the file of the node for this key range.</summary>
-        public UInt32 NodePointer   { get; }
+        /// <summary>Location in the file of the next node for this key range.</summary>
+        public Int32 NodePointer   { get; }
+
+        Boolean IKey.IsInteriorNode => true;
 
         private String keyAsString;
         public String StringKey => this.keyAsString ?? ( this.keyAsString = Encoding.ASCII.GetString( this.keyBytes ) );
 
-        public InteriorIndexKeyEntry(Byte[] keyBytes, UInt32 recordNumber, UInt32 nodePointer)
+        public InteriorIndexKeyEntry(Byte[] keyBytes, UInt32 recordNumber, Int32 nodePointer)
         {
             this.keyBytes        = keyBytes;
             //this.KeyBytes      = new ReadOnlyCollection<byte>( this.keyBytes );
@@ -45,9 +47,9 @@ namespace Dbf.Cdx
 
             i += 4;
 
-            Int32 nPage = keyBuffer[ i + 3 ] | ( keyBuffer[ i + 2 ] << 8 ) | ( keyBuffer[ i + 1 ] << 16 ) | ( keyBuffer[ i + 0 ] << 24 );
+            Int32 nodePointer = keyBuffer[ i + 3 ] | ( keyBuffer[ i + 2 ] << 8 ) | ( keyBuffer[ i + 1 ] << 16 ) | ( keyBuffer[ i + 0 ] << 24 );
 
-            return new InteriorIndexKeyEntry( key, (UInt32)recordNumber, (UInt32)nPage ); 
+            return new InteriorIndexKeyEntry( key, (UInt32)recordNumber, nodePointer ); 
         }
     }
 }

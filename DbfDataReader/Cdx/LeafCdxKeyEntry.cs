@@ -20,6 +20,8 @@ namespace Dbf.Cdx
 
         public Byte[] KeyBytes => this.keyBytes;
 
+        Boolean IKey.IsInteriorNode => false;
+
         [CLSCompliant(false)]
         public   UInt32 DbfRecordNumber   { get; }
         

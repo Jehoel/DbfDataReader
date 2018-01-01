@@ -8,5 +8,7 @@ namespace Dbf.Cdx
         Byte[] KeyBytes { get; }
 
         UInt32 DbfRecordNumber { get; }
+
+        Boolean IsInteriorNode { get; }
     }
 }
