@@ -12,8 +12,30 @@ namespace DbfDataReader.NetFx.Tests
 {
     public class CdxTests
     {
+        private static FileInfo[] _testCdxFiles = new FileInfo[]
+        {
+            new FileInfo( @"C:\git\cdx\DBD-XBase\t\rooms.cdx" ),
+            new FileInfo( @"C:\git\rss\DbfDataReader\Data\CUSTOMER-dbfMan.cdx" ),
+            new FileInfo( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" ),
+            new FileInfo( @"C:\git\rss\DbfDataReader\Data\ORDER.CDX" ),
+            new FileInfo( @"C:\git\rss\DbfDataReader\Data\VEHICLE.CDX" ),
+            new FileInfo( @"C:\git\rss\DbfDataReader\DbfDataReader\DbfDataReader.Tests\TestData\foxprodb\calls.CDX" ),
+            new FileInfo( @"C:\git\rss\DbfDataReader\DbfDataReader\DbfDataReader.Tests\TestData\foxprodb\contacts.CDX" ),
+            new FileInfo( @"C:\git\rss\DbfDataReader\DbfDataReader\DbfDataReader.Tests\TestData\foxprodb\setup.CDX" ),
+            new FileInfo( @"C:\git\rss\DbfDataReader\DbfDataReader\DbfDataReader.Tests\TestData\foxprodb\types.CDX" )
+        };
+
         [Fact]
         public void Cdx_reader_should_work()
+        {
+            foreach( FileInfo file in _testCdxFiles )
+            {
+                CdxFile cdxFile = CdxFile.Open( file.FullName );
+                Cdx_reader_should_work( cdxFile );
+            }
+        }
+        
+        private static void Cdx_reader_should_work(CdxFile cdxFile)
         {
             CdxFile index = CdxFile.Open( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" );
 
