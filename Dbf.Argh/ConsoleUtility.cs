@@ -91,7 +91,8 @@ namespace Dbf.Argh
 				Console.WriteLine( "Could not parse \"{0}\" as UInt32.", input );
 				Console.ResetColor();
 
-			} while( true );
+			}
+			while( true );
 		}
 
 		public static String ReadLine(String prompt)
@@ -106,13 +107,31 @@ namespace Dbf.Argh
 				String input = Console.ReadLine();
 				Console.ResetColor();
 
-				if( !String.IsNullOrWhiteSpace( input ) ) return input;
+				if( !String.IsNullOrWhiteSpace( input ) ) return input.Trim();
 
 				Console.ForegroundColor = ConsoleColor.Yellow;
 				Console.WriteLine("Empty input.");
 				Console.ResetColor();
 
-			} while( true );
+			}
+			while( true );
+		}
+
+		public static String ReadAny(String prompt, params String[] options)
+		{
+			HashSet<String> set = new HashSet<String>( StringComparer.CurrentCultureIgnoreCase );
+			foreach( String option in options ) set.Add( option );
+
+			do
+			{
+				String line = ReadLine( prompt );
+				if( set.Contains( line ) ) return line;
+
+				Console.ForegroundColor = ConsoleColor.Yellow;
+				Console.WriteLine("Invalid input.");
+				Console.ResetColor();
+			}
+			while( true );
 		}
 	}
 }

@@ -46,7 +46,7 @@ namespace Dbf.Cdx
             {
                 foreach( InteriorIndexKeyEntry key in node.KeyEntries )
                 {
-                    Int32 cmp = comparer.Compare( targetKey, key.KeyBytes );
+                    Int32 cmp = comparer.Compare( key.KeyBytes, targetKey );
                     if( cmp < 0 )
                     {
                         // If a key's value is less than the targetKey, then we can dismiss it, as all of its children will also be less-than-or-equal-to the target.
@@ -71,6 +71,7 @@ namespace Dbf.Cdx
                         else
                         {
                             node = (InteriorCdxNode)nextNode;
+                            break;
                         }
                     }
                 }
@@ -91,7 +92,7 @@ namespace Dbf.Cdx
             {
                 IKey key = keys[i];
 
-                Int32 cmp = comparer.Compare( targetKey, key.KeyBytes );
+                Int32 cmp = comparer.Compare( key.KeyBytes, targetKey );
                 if( cmp < 0 )
                 {
                     // NOOP.
@@ -127,7 +128,7 @@ namespace Dbf.Cdx
             while( lower <= upper )
             {
                 Int32 middle = lower + (upper - lower) / 2;
-                Int32 comparisonResult = comparer.Compare( target, list[middle].KeyBytes );
+                Int32 comparisonResult = comparer.Compare( list[middle].KeyBytes, target );
 
                 if( ( isInAscendingOrder && comparisonResult < 0 ) || ( !isInAscendingOrder && comparisonResult > 0 ) )
                 {
