@@ -13,11 +13,13 @@ namespace Dbf.Cdx
 
             BaseCdxNode node = index.RootNode;
 
+            throw new NotImplementedException();
+
             while( node != null )
             {
                 IList<IKey> keys = node.GetKeys();
 
-                throw new NotImplementedException();
+                
             }
         }
 
@@ -67,7 +69,5 @@ namespace Dbf.Cdx
 
             return 0;
         }
-
-        public 
     }
 }

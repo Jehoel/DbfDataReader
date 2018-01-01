@@ -35,7 +35,7 @@ namespace Dbf.Cdx
             if( posActual != posExpected ) throw new InvalidOperationException("Didn't read expected number of bytes in CompactIndexExteriorNode.");
 #endif
 
-            CdxKeyEntry[] entries;
+            LeafCdxKeyEntry[] entries;
             UnpackIndexKeys(
                 keyCount,
                 indexHeader.KeyLength,
@@ -75,7 +75,7 @@ namespace Dbf.Cdx
             KeyComponent duplicateBytesInfo,
             KeyComponent trailingBytesInfo,
             Byte[] packed,
-            out CdxKeyEntry[] entries
+            out LeafCdxKeyEntry[] entries
         )
         {
             if( packed == null ) throw new ArgumentNullException(nameof(packed));
@@ -84,7 +84,7 @@ namespace Dbf.Cdx
 
             Int32 keyValueSrc = packed.Length;
 
-            entries = new CdxKeyEntry[ keyCount ];
+            entries = new LeafCdxKeyEntry[ keyCount ];
 
             Byte[] previousKeyData = null;
             for( Int32 i = 0; i < keyCount; i++ )
@@ -164,7 +164,7 @@ namespace Dbf.Cdx
                     keyData[b] = packed[ keyValueSrc + src ];
                 }
 
-                CdxKeyEntry keyEntry = new CdxKeyEntry( keyData, recordNumber, (Int32)duplicateBytes, (Int32)trailingBytes );
+                LeafCdxKeyEntry keyEntry = new LeafCdxKeyEntry( keyData, recordNumber, (Int32)duplicateBytes, (Int32)trailingBytes );
                 entries[i] = keyEntry;
 
                 previousKeyData = keyData;
@@ -205,7 +205,7 @@ namespace Dbf.Cdx
             Byte duplicateCountBitsCount,
             Byte trailCountBitsCount,
             Byte recordNumberDuplicateCountTrailingCountBytes,
-            CdxKeyEntry[] indexKeys
+            LeafCdxKeyEntry[] indexKeys
         )
             : base( offset, indexHeader, attributes, keyCount, leftSibling, rightSibling )
         {
@@ -229,7 +229,7 @@ namespace Dbf.Cdx
         public Byte   TrailCountBitsCount     { get; }
         /// <summary>Number of bytes holding record number, duplicate count and trailing count</summary>
         public Byte   IndexKeyEntryLength     { get; }
-        public CdxKeyEntry[] IndexKeys        { get; }
+        public LeafCdxKeyEntry[] IndexKeys        { get; }
 
         public override IList<IKey> GetKeys()
         {

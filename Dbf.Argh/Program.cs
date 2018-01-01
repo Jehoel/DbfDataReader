@@ -175,7 +175,7 @@ namespace Dbf.Argh
 
 		private static readonly Object[] _exteriorKeyHeaders = new Object[] { "Key ASCII", "Key bytes", "Number" };
 
-		private static Object[] DumpExteriorKeyEntry(CdxKeyEntry entry)
+		private static Object[] DumpExteriorKeyEntry(LeafCdxKeyEntry entry)
 		{
 			String keyAscii = SafeString( entry.StringKey );
 			String keyBytes = BitConverter.ToString( entry.KeyBytes );
