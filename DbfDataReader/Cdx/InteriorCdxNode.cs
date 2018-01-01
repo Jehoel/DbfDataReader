@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 
@@ -6,7 +7,7 @@ namespace Dbf.Cdx
 {
     public class InteriorCdxNode : BaseCdxNode
     {
-        internal static InteriorCdxNode Read(CdxFileHeader indexHeader, Int64 offset, CdxNodeAttributes attributes, BinaryReader reader)
+        internal static InteriorCdxNode Read(CdxIndexHeader indexHeader, Int64 offset, CdxNodeAttributes attributes, BinaryReader reader)
         {
             UInt16 keyCount     = reader.ReadUInt16();
             Int32  leftSibling  = reader.ReadInt32();
@@ -43,7 +44,7 @@ namespace Dbf.Cdx
 
         private InteriorCdxNode(
             Int64 offset,
-            CdxFileHeader indexHeader,
+            CdxIndexHeader indexHeader,
 
             CdxNodeAttributes attributes,
             UInt16 keyCount,
@@ -62,32 +63,38 @@ namespace Dbf.Cdx
 
         public InteriorIndexKeyEntry[] KeyEntries { get; }
 
+        public override IList<IKey> GetKeys()
+        {
+            return this.KeyEntries;
+        }
     }
 
-    public class InteriorIndexKeyEntry
+    public class InteriorIndexKeyEntry : IKey
     {
         private readonly Byte[] keyBytes;
         //public ReadOnlyCollection<Byte> KeyBytes { get; }
         public Byte[] KeyBytes => this.keyBytes;
 
-        public UInt32 RecordNumber { get; }
-        public UInt32 NPage        { get; }
+        /// <summary>DBF record number for this key (so if it's an exact match there's no need to traverse-down to a Leaf Node).</summary>
+        public UInt32 DbfRecordNumber { get; }
 
-        public InteriorIndexKeyEntry(Byte[] keyBytes, UInt32 recordNumber, UInt32 nPage)
+        /// <summary>Location in the file of the node for this key range.</summary>
+        public UInt32 NodePointer   { get; }
+
+        public InteriorIndexKeyEntry(Byte[] keyBytes, UInt32 recordNumber, UInt32 nodePointer)
         {
-            this.keyBytes     = keyBytes;
-            //this.KeyBytes     = new ReadOnlyCollection<byte>( this.keyBytes );
+            this.keyBytes        = keyBytes;
+            //this.KeyBytes      = new ReadOnlyCollection<byte>( this.keyBytes );
 
-            this.RecordNumber = recordNumber;
-            this.NPage        = nPage;
+            this.DbfRecordNumber = recordNumber;
+            this.NodePointer     = nodePointer;
         }
 
         public static InteriorIndexKeyEntry Read(Byte[] keyBuffer, Int32 keyLength, Int32 indexEntryIdx)
         {
             // Microsoft's documentation is incorrect.
             // Their documentation for Compound CDX refers to normal *.idx documentation, which states that each key is followed by "4 hex characters".
-            // In CDX inner nodes, however, each key is actually followed by two UInt32 values (for a total of 8 bytes): record-number, and nPage
-            // however I'm unsure what the difference between them is, exactly... this si what MyCdx calls them...
+            // In CDX inner nodes, however, each key is actually followed by two UInt32 values (for a total of 8 bytes): recordNumber, and nodePointer
 
             Int32 startIdx = (keyLength + 8) * indexEntryIdx;
 

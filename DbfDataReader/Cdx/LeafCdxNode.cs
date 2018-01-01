@@ -1,20 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Text;
 
 namespace Dbf.Cdx
 {
+    /// <summary>Also known as an Exterior CDX Node.</summary>
     public sealed class LeafCdxNode : BaseCdxNode
     {
+        #region Read
+
         private const Int32 IndexKeyBufferLength = 488;
 
-        public static LeafCdxNode Read(CdxFileHeader indexHeader, Int64 offset, CdxNodeAttributes attributes, BinaryReader reader)
+        /// <summary>Reads a Leaf CDX node from +1 bytes from its start in the file, the first byte is the Node Attributes byte which should be passed-in as a parameter.</summary>
+        public static LeafCdxNode Read(CdxIndexHeader indexHeader, Int64 offset, CdxNodeAttributes attributes, BinaryReader reader)
         {
             if( reader == null ) throw new ArgumentNullException(nameof(reader));
 
-            //CompactIndexNodeAttributes attributes = (CompactIndexNodeAttributes)reader.ReadUInt16();
             UInt16 keyCount                = reader.ReadUInt16();
             Int32  leftSibling             = reader.ReadInt32();
             Int32  rightSibling            = reader.ReadInt32();
@@ -39,9 +40,9 @@ namespace Dbf.Cdx
                 keyCount,
                 indexHeader.KeyLength,
                 recordNumberDuplicateCountTrailingCountBytes,
-                new KeyCmpt( recordNumberMask, recordNumberBitsCount ),
-                new KeyCmpt( duplicateByteCountMask, duplicateCountBitsCount ),
-                new KeyCmpt( trailingByteCountMask, trailCountBitsCount ),
+                new KeyComponent( recordNumberMask, recordNumberBitsCount ),
+                new KeyComponent( duplicateByteCountMask, duplicateCountBitsCount ),
+                new KeyComponent( trailingByteCountMask, trailCountBitsCount ),
                 indexKeysPacked,
                 out entries
             );
@@ -70,9 +71,9 @@ namespace Dbf.Cdx
             UInt16 keyCount,
             UInt16 keyLength,
             Byte packedKeyEntryLength,
-            KeyCmpt recordNumberInfo,
-            KeyCmpt duplicateBytesInfo,
-            KeyCmpt trailingBytesInfo,
+            KeyComponent recordNumberInfo,
+            KeyComponent duplicateBytesInfo,
+            KeyComponent trailingBytesInfo,
             Byte[] packed,
             out CdxKeyEntry[] entries
         )
@@ -97,24 +98,24 @@ namespace Dbf.Cdx
 
                 UInt32 recordNumber;
                 {
-                    Int32 recordNumberSigned;
+                    Int32 recordNumberInt;
 
                     // RecordNumbers are in big-endian order.
                     if( recordNumberInfo.BitCount <= 8 )
                     {
-                        recordNumberSigned = packed[ a ];
+                        recordNumberInt = packed[ a ];
                     }
                     else if( recordNumberInfo.BitCount <= 16 )
                     {
-                        recordNumberSigned = ( packed[ a + 1 ] << 8 ) | packed[ a + 0 ];
+                        recordNumberInt = ( packed[ a + 1 ] << 8 ) | packed[ a + 0 ];
                     }
                     else if( recordNumberInfo.BitCount <= 24 )
                     {
-                        recordNumberSigned = ( packed[ a + 2 ] << 16 ) | ( packed[ a + 1 ] << 8 ) | packed[ a + 0 ];
+                        recordNumberInt = ( packed[ a + 2 ] << 16 ) | ( packed[ a + 1 ] << 8 ) | packed[ a + 0 ];
                     }
                     else if( recordNumberInfo.BitCount <= 32 )
                     {
-                        recordNumberSigned = ( packed[ a + 3 ] << 24 ) | ( packed[ a + 2 ] << 16 ) | ( packed[ a + 1 ] << 8 ) | packed[ a + 0 ];
+                        recordNumberInt = ( packed[ a + 3 ] << 24 ) | ( packed[ a + 2 ] << 16 ) | ( packed[ a + 1 ] << 8 ) | packed[ a + 0 ];
                     }
                     else
                     {
@@ -122,16 +123,16 @@ namespace Dbf.Cdx
                         throw new NotSupportedException("RecordNumber.BitCount values bigger than 32 are not supported.");
                     }
 
-                    recordNumber = (UInt32)recordNumberSigned & recordNumberInfo.Mask;
+                    recordNumber = (UInt32)recordNumberInt & recordNumberInfo.Mask;
                 }
 
                 UInt32 duplicateBytes;
                 UInt32 trailingBytes;
                 {
                     // Get the last two bytes of the array. Note we assume packedKeyEntryLength is >=2
-                    Byte bN  = packed[ a + (packedKeyEntryLength-1) ]; // b[N  ]
+                    Byte bN0 = packed[ a + (packedKeyEntryLength-1) ]; // b[N-0]
                     Byte bN1 = packed[ a + (packedKeyEntryLength-2) ]; // b[N-1]
-                    Int32 trailingAndDuplicate = ( bN1 << 8 ) | bN;
+                    Int32 trailingAndDuplicate = ( bN1 << 8 ) | bN0;
 
                     duplicateBytes = (UInt32)( trailingAndDuplicate & duplicateBytesInfo.Mask );
 
@@ -170,11 +171,26 @@ namespace Dbf.Cdx
             }
         }
 
+        /// <summary>CDX Key Component info.</summary>
+        private struct KeyComponent
+        {
+            public KeyComponent(UInt32 mask, Byte bitCount)
+            {
+                this.Mask     = mask;
+                this.BitCount = bitCount;
+            }
+
+            public readonly UInt32 Mask;
+            public readonly Byte   BitCount;
+        }
+
+        #endregion
+
         private LeafCdxNode
         (
             // Metadata:
             Int64 offset,
-            CdxFileHeader indexHeader,
+            CdxIndexHeader indexHeader,
 
             // Node data:
             CdxNodeAttributes attributes,
@@ -201,7 +217,6 @@ namespace Dbf.Cdx
             this.DuplicateCountBitsCount = duplicateCountBitsCount;
             this.TrailCountBitsCount     = trailCountBitsCount;
             this.IndexKeyEntryLength     = recordNumberDuplicateCountTrailingCountBytes;
-//            this.IndexKeysPacked         = indexKeysPacked ?? throw new ArgumentNullException( nameof( indexKeysPacked ) );
             this.IndexKeys               = indexKeys ?? throw new ArgumentNullException( nameof( indexKeys ) );
         }
 
@@ -215,18 +230,10 @@ namespace Dbf.Cdx
         /// <summary>Number of bytes holding record number, duplicate count and trailing count</summary>
         public Byte   IndexKeyEntryLength     { get; }
         public CdxKeyEntry[] IndexKeys        { get; }
-    }
 
-    /// <summary>CDX Key Component info.</summary>
-    internal struct KeyCmpt
-    {
-        public KeyCmpt(UInt32 mask, Byte bitCount)
+        public override IList<IKey> GetKeys()
         {
-            this.Mask     = mask;
-            this.BitCount = bitCount;
+            return this.IndexKeys;
         }
-
-        public readonly UInt32 Mask;
-        public readonly Byte   BitCount;
     }
 }

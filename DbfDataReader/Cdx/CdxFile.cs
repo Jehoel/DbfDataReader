@@ -10,7 +10,7 @@ namespace Dbf.Cdx
     {
         private readonly BinaryReader reader;
 
-        private CdxFile(FileInfo fileInfo, CdxFileHeader header, BaseCdxNode rootNode, BinaryReader reader)
+        private CdxFile(FileInfo fileInfo, CdxIndexHeader header, BaseCdxNode rootNode, BinaryReader reader)
         {
             this.FileInfo = fileInfo;
             this.Header   = header;
@@ -27,8 +27,9 @@ namespace Dbf.Cdx
 
         public FileInfo FileInfo { get; }
 
-        public CdxFileHeader Header { get; }
+        public CdxIndexHeader Header { get; }
 
+        /// <summary>Root node that contains the Compound Index root that indexes the tag-names and point to contained indexes. This is not an actual index of DBF values.</summary>
         public BaseCdxNode RootNode { get; }
 
         public static CdxFile Open(String fileName)
@@ -38,7 +39,7 @@ namespace Dbf.Cdx
             {
                 BinaryReader rdr = new BinaryReader( fs );
 
-                CdxFileHeader header = CdxFileHeader.Read( rdr );
+                CdxIndexHeader header = CdxIndexHeader.Read( rdr );
 
                 rdr.BaseStream.Seek( header.RootNodePointer, SeekOrigin.Begin );
 
@@ -46,6 +47,8 @@ namespace Dbf.Cdx
 
                 // The root node (and its siblings? or is it limited to only one node?) is special
                 // ...its keys are actually "tag names" which are the names of the sub-indexes it contains.
+
+                // Question: Should the tags be preloaded?
 
                 return new CdxFile( new FileInfo( fileName ), header, rootNode, rdr );
             }
@@ -56,27 +59,30 @@ namespace Dbf.Cdx
             }
         }
 
+        public CdxIndex ReadIndex(String tagName)
+        {
+            throw new NotImplementedException();
+
+            // search this.RootNode for the tagName
+            // then return the CdxIndex for it.
+        }
+
         // TODO: The return-type of this function should be a derived type, e.g. CompactIndexRoot or something to avoid confusion.
-        public BaseCdxNode ReadCompactIndex(UInt32 compactIndexOffsetInCompoundIndexFile)
+        public CdxIndex ReadIndex(UInt32 compactIndexOffsetInCompoundIndexFile)
         {
             this.reader.BaseStream.Seek( compactIndexOffsetInCompoundIndexFile, SeekOrigin.Begin );
 
-            CdxFileHeader header = CdxFileHeader.Read( this.reader );
+            CdxIndexHeader indexHeader = CdxIndexHeader.Read( this.reader );
 
-            this.reader.BaseStream.Seek( header.RootNodePointer, SeekOrigin.Begin );
+            if( !indexHeader.Options.HasFlag(CdxIndexOptions.IsCompoundIndexHeader) ) throw new CdxException( CdxErrorCode.CompoundIndexHeaderDoesNotHaveCompoundIndexOption );
 
-            // TODO: Cache nodes in-memory?
-            BaseCdxNode node = BaseCdxNode.Read( header, this.reader );
-            return node;
-        }
+            this.reader.BaseStream.Seek( indexHeader.RootNodePointer, SeekOrigin.Begin );
 
-        public BaseCdxNode ReadNode(BaseCdxNode parentNode, UInt32 recordNumber)
-        {
-            this.reader.BaseStream.Seek( recordNumber, SeekOrigin.Begin );
+            BaseCdxNode rootNode = BaseCdxNode.Read( indexHeader, this.reader );
+            
+            if( !rootNode.Attributes.HasFlag(CdxNodeAttributes.RootNode) ) throw new CdxException( CdxErrorCode.RootNodeDoesNotHaveRootAttribute );
 
-            // TODO: Cache nodes in-memory?
-            BaseCdxNode node = BaseCdxNode.Read( parentNode.IndexHeader, this.reader );
-            return node;
+            return new CdxIndex( this, indexHeader, rootNode );
         }
     }
 }

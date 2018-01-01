@@ -3,9 +3,9 @@ using System.IO;
 
 namespace Dbf.Cdx
 {
-    public class CdxFileHeader
+    public class CdxIndexHeader
     {
-        public static CdxFileHeader Read(BinaryReader reader)
+        public static CdxIndexHeader Read(BinaryReader reader)
         {
             if( reader == null ) throw new ArgumentNullException(nameof(reader));
 
@@ -15,10 +15,10 @@ namespace Dbf.Cdx
             Int32  freeNodeListPointer     = reader.ReadInt32();
             UInt32 reserved1               = reader.ReadUInt32();
             UInt16 keyLength               = reader.ReadUInt16();
-            CompactIndexOptions options    = (CompactIndexOptions)reader.ReadByte();
+            CdxIndexOptions options    = (CdxIndexOptions)reader.ReadByte();
             Byte   signature               = reader.ReadByte();
             Byte[] reserved2               = reader.ReadBytes( 502 - 16 ); // 486 bytes
-            IndexOrder order               = (IndexOrder)reader.ReadUInt16();
+            CdxIndexOrder order               = (CdxIndexOrder)reader.ReadUInt16();
             UInt16 reserved3               = reader.ReadUInt16();
             UInt16 forExpressionPoolLength = reader.ReadUInt16();
             UInt16 reserved4               = reader.ReadUInt16();
@@ -31,7 +31,7 @@ namespace Dbf.Cdx
             if( actualEnd != expectedEnd ) throw new InvalidOperationException("Did not read 1024 bytes exactly.");
 #endif
             
-            return new CdxFileHeader(
+            return new CdxIndexHeader(
                 start,
 
                 rootNodePointer,
@@ -50,7 +50,7 @@ namespace Dbf.Cdx
             );
         }
 
-        private CdxFileHeader(Int64 offset, UInt32 rootNodePointer, Int32 freeNodeListPointer, UInt32 reserved1, UInt16 keyLength, CompactIndexOptions options, Byte signature, Byte[] reserved2, IndexOrder order, UInt16 reserved3, UInt16 forExpressionPoolLength, UInt16 reserved4, UInt16 keyExpressionPoolLength, Byte[] keyExpressionPool)
+        private CdxIndexHeader(Int64 offset, UInt32 rootNodePointer, Int32 freeNodeListPointer, UInt32 reserved1, UInt16 keyLength, CdxIndexOptions options, Byte signature, Byte[] reserved2, CdxIndexOrder order, UInt16 reserved3, UInt16 forExpressionPoolLength, UInt16 reserved4, UInt16 keyExpressionPoolLength, Byte[] keyExpressionPool)
         {
             this.Offset = offset;
 
@@ -85,7 +85,7 @@ namespace Dbf.Cdx
         public UInt16 KeyLength { get; }
 
         /// <summary>Index options</summary>
-        public CompactIndexOptions Options { get; }
+        public CdxIndexOptions Options { get; }
 
         /// <summary>Index signature</summary>
         public Byte Signature { get; }
@@ -93,7 +93,7 @@ namespace Dbf.Cdx
         /// <summary>Bytes 16 through 501. Reserved for internal use.</summary>
         public Byte[] Reserved2 { get; }
 
-        public IndexOrder Order { get; }
+        public CdxIndexOrder Order { get; }
 
         /// <summary>Bytes 504-505.</summary>
         public UInt16 Reserved3 { get; }

@@ -5,23 +5,23 @@ using System.Text;
 namespace Dbf.Cdx
 {
     [DebuggerDisplay("KeyValue = {StringKey}, RecordNumber = {RecordNumber}")]
-    public class CdxKeyEntry
+    public class CdxKeyEntry : IKey
     {
         private readonly Byte[] keyData;
 
         internal CdxKeyEntry(Byte[] keyData, UInt32 recordNumber, Int32 duplicateBytes, Int32 trailingBytes)
         {
-            this.keyData        = keyData;
+            this.keyData         = keyData;
 
-            this.RecordNumber   = recordNumber;
-            this.DuplicateBytes = duplicateBytes;
-            this.TrailingBytes  = trailingBytes;
+            this.DbfRecordNumber = recordNumber;
+            this.DuplicateBytes  = duplicateBytes;
+            this.TrailingBytes   = trailingBytes;
         }
 
         public Byte[] KeyBytes => this.keyData;
 
         [CLSCompliant(false)]
-        public   UInt32 RecordNumber   { get; }
+        public   UInt32 DbfRecordNumber   { get; }
         
         internal Int32  DuplicateBytes { get; }
         internal Int32  TrailingBytes  { get; }

@@ -3,16 +3,16 @@
 namespace Dbf.Cdx
 {
     [Flags]
-    public enum CompactIndexOptions : byte
+    public enum CdxIndexOptions : byte
     {
-        None            =  0,
-        Unique          =  1,
-        HasForClause    =  8,
-        IsCompactIndex  = 32,
-        IsCompoundIndex = 64
+        None                  =  0,
+        Unique                =  1,
+        HasForClause          =  8,
+        IsCompactIndex        = 32,
+        IsCompoundIndexHeader = 64
     }
 
-    public enum IndexOrder : ushort
+    public enum CdxIndexOrder : ushort
     {
         Ascending  = 0,
         Descending = 1
