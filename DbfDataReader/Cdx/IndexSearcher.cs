@@ -5,9 +5,59 @@ namespace Dbf.Cdx
 {
     public static class IndexSearcher
     {
+        public static Int32 Count(CdxIndex index)
+        {
+            if( index == null ) throw new ArgumentNullException(nameof(index));
+
+            // Traverse to the left-most leaf-node, then traverse to the right, counting keys.
+            // There is no need to store HashSet<> of keys, as the values are sorted, so just store the previous value to determine uniqueness (i.e. if current value equals the previous one).
+            
+            // uhhh, well the index keys are in-order, but the DbfRecordNumber is not, hmmmm.
+
+            // let's just get the dumb count: the size of an index.
+
+            BaseCdxNode node = index.RootNode;
+            LeafCdxNode leftmostLeafNode = node as LeafCdxNode;
+            if( leftmostLeafNode == null )
+            {
+                while( node != null )
+                {
+                    InteriorCdxNode interiorNode = (InteriorCdxNode)node;
+                    if( interiorNode.KeyEntries.Length == 0 ) return 0;
+
+                    node = index.ReadNode( interiorNode.KeyEntries[0].NodePointer );
+                    leftmostLeafNode = node as LeafCdxNode;
+                    if( leftmostLeafNode != null ) node = null;
+                }
+            }
+
+            // As we always chose the 0th key of an interior-node, the leftmost should have no left sibling:
+            if( leftmostLeafNode.LeftSibling != BaseCdxNode.NoSibling ) throw new CdxException( CdxErrorCode.LeftmostNodeHasLeftSibling );
+
+            LeafCdxNode currentLeaf = leftmostLeafNode;
+            Int32 total = 0;
+
+            while( true )
+            {
+                total += currentLeaf.KeyCount;
+
+                if( currentLeaf.RightSibling == BaseCdxNode.NoSibling )
+                {
+                    break;
+                }
+                else
+                {
+                    currentLeaf = (LeafCdxNode)index.ReadNode( currentLeaf.RightSibling );
+                }
+            }
+
+            return total;
+        }
+
         /// <summary>Returns all matching DBF Record Number values that match the specified key. The key length must match the index.</summary>
         public static IEnumerable<UInt32> SearchIndex(CdxIndex index, Byte[] targetKey)
         {
+            if( index == null ) throw new ArgumentNullException(nameof(index));
             if( targetKey == null ) throw new ArgumentNullException(nameof(targetKey));
             if( index.Header.KeyLength != targetKey.Length ) throw new ArgumentException("The specified key value has a different length than the index key.", nameof(targetKey));
 

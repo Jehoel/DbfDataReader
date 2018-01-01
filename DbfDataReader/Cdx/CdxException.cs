@@ -31,6 +31,7 @@ namespace Dbf.Cdx
     {
         None,
         CompoundIndexHeaderDoesNotHaveCompoundIndexOption,
-        RootNodeDoesNotHaveRootAttribute
+        RootNodeDoesNotHaveRootAttribute,
+        LeftmostNodeHasLeftSibling
     }
 }

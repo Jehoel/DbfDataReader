@@ -41,7 +41,7 @@ namespace Dbf.Argh
 		{
 			CdxIndex index = OpenCdxFileAndPromptUserForCdxIndexTag( fileName );
 
-			String option = ConsoleUtility.ReadAny( "[B]rowse or [S]earch index?", "B", "S" ).ToUpperInvariant();
+			String option = ConsoleUtility.ReadAny( "[B]rowse, [C]ount or [S]earch index?", "B", "C", "S" ).ToUpperInvariant();
 			if( option == "B" )
 			{
 				BrowseCdxIndex( index );
@@ -49,6 +49,10 @@ namespace Dbf.Argh
 			else if( option == "S" )
 			{
 				SearchCdxIndex( index );
+			}
+			else if( option == "C" )
+			{
+				CountCdxIndex( index );
 			}
 		}
 
@@ -211,7 +215,7 @@ namespace Dbf.Argh
 
 		#endregion
 
-		#region Search CDX file
+		#region Search CDX index
 
 		private static void SearchCdxIndex(CdxIndex index)
 		{
@@ -236,6 +240,22 @@ namespace Dbf.Argh
 
 				Console.WriteLine( "Took {0}ms.", sw.ElapsedMilliseconds );
 			}
+		}
+
+		#endregion
+
+		#region Count CDX index
+
+		private static void CountCdxIndex(CdxIndex index)
+		{
+			Stopwatch sw = Stopwatch.StartNew();
+
+			Int32 count = IndexSearcher.Count( index );
+
+			sw.Stop();
+
+			Console.WriteLine( "Index has {0} keys.", count );
+			Console.WriteLine( "Took {0}ms.", sw.ElapsedMilliseconds );
 		}
 
 		#endregion
