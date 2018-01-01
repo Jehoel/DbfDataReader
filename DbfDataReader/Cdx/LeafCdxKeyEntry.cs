@@ -28,7 +28,7 @@ namespace Dbf.Cdx
         internal Int32  DuplicateBytes { get; }
         internal Int32  TrailingBytes  { get; }
 
-        private String keyAsString;
-        public String StringKey => this.keyAsString ?? ( this.keyAsString = Encoding.ASCII.GetString( this.keyBytes ) );
+        private String stringKey;
+        public String StringKey => this.stringKey ?? ( this.stringKey = Encoding.ASCII.GetString( this.keyBytes, 0, count: this.keyBytes.Length - this.TrailingBytes ) );
     }
 }

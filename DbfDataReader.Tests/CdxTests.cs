@@ -16,74 +16,65 @@ namespace DbfDataReader.NetFx.Tests
         public void Cdx_reader_should_work()
         {
             CdxFile index = CdxFile.Open( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" );
-            LeafCdxNode rootNode = (LeafCdxNode)index.RootNode;
 
-            Tuple<String,Int32>[] expectedIndexTags = new Tuple<String,Int32>[]
+            // Subtest 1: All the index tags and offsets must match:
             {
-                Tuple.Create("APPBAL", 3956224 ), 
-                Tuple.Create("APPCODE", 3952128 ), 
-                Tuple.Create("APPNAME", 3929600 ), 
-                Tuple.Create("APPROVED", 1224192 ), 
-                Tuple.Create("BALANCE", 1250304 ), 
-                Tuple.Create("CODE", 76288 ), 
-                Tuple.Create("EMAIL", 3596800 ), 
-                Tuple.Create("F_PHONE", 962560 ), 
-                Tuple.Create("GLPOST", 2051584 ), 
-                Tuple.Create("H_PHONE", 743936 ), 
-                Tuple.Create("KEY", 1536 ), 
-                Tuple.Create("M_PHONE", 1042944 ), 
-                Tuple.Create("NAME", 134144 ), 
-                Tuple.Create("NAMEBAL", 1246720 ), 
-                Tuple.Create("NAMEIA", 2851328 ), 
-                Tuple.Create("SM_KEY", 1251840 ), 
-                Tuple.Create("SRCDATE", 2865664 ), 
-                Tuple.Create("STORENAME", 2960896 ), 
-                Tuple.Create("W_PHONE", 864256 )
-            };
+                LeafCdxNode rootNode = (LeafCdxNode)index.RootNode;
 
-            Assert.Equal( expectedIndexTags.Select( t => t.Item1 ), rootNode.IndexKeys.Select( key => key.StringKey ) );
-            Assert.Equal( expectedIndexTags.Select( t => t.Item2 ), rootNode.IndexKeys.Select( key => (Int32)key.DbfRecordNumber ) );
+                Tuple<String,Int32>[] expectedIndexTags = new Tuple<String,Int32>[]
+                {
+                    Tuple.Create("APPBAL", 3956224 ), 
+                    Tuple.Create("APPCODE", 3952128 ), 
+                    Tuple.Create("APPNAME", 3929600 ), 
+                    Tuple.Create("APPROVED", 1224192 ), 
+                    Tuple.Create("BALANCE", 1250304 ), 
+                    Tuple.Create("CODE", 76288 ), 
+                    Tuple.Create("EMAIL", 3596800 ), 
+                    Tuple.Create("F_PHONE", 962560 ), 
+                    Tuple.Create("GLPOST", 2051584 ), 
+                    Tuple.Create("H_PHONE", 743936 ), 
+                    Tuple.Create("KEY", 1536 ), 
+                    Tuple.Create("M_PHONE", 1042944 ), 
+                    Tuple.Create("NAME", 134144 ), 
+                    Tuple.Create("NAMEBAL", 1246720 ), 
+                    Tuple.Create("NAMEIA", 2851328 ), 
+                    Tuple.Create("SM_KEY", 1251840 ), 
+                    Tuple.Create("SRCDATE", 2865664 ), 
+                    Tuple.Create("STORENAME", 2960896 ), 
+                    Tuple.Create("W_PHONE", 864256 )
+                };
 
-            foreach( LeafCdxKeyEntry key in rootNode.IndexKeys )
+                Assert.Equal( expectedIndexTags.Select( t => t.Item1 ), rootNode.IndexKeys.Select( key => key.StringKey ) );
+                Assert.Equal( expectedIndexTags.Select( t => t.Item2 ), rootNode.IndexKeys.Select( key => (Int32)key.DbfRecordNumber ) );
+            }
+
+            // Subset 2: It should be possible to read every single node in the index without failing any CDX validation checks and built-in sanity tests:
             {
-                if( key.StringKey != "KEY" ) continue;
-                
-                CdxIndex cdxIndex = index.ReadIndex( key.DbfRecordNumber );
+                foreach( LeafCdxKeyEntry key in ((LeafCdxNode)index.RootNode).IndexKeys )
+                {
+                    CdxIndex cdxIndex = index.ReadIndex( key.DbfRecordNumber );
 
-                Int32 keyLength = cdxIndex.Header.KeyLength;
-                Int32 recordLength = keyLength + 4;
-                
-                String y = "bar";
+                    // 
+                    BaseCdxNode rootNode = cdxIndex.RootNode;
+                    if( rootNode is InteriorCdxNode rootNodeIsInteriorNode )
+                    {
+                        ReadInteriorNode( cdxIndex, rootNodeIsInteriorNode );
+                    }
+                }
             }
 
             String x = "foo";
         }
 
-        class IndexEntry
+        private static void ReadInteriorNode(CdxIndex index, InteriorCdxNode interiorNode)
         {
-            //public Int64 Offset { get; }
-
-            public Byte[] Key { get; }
-            public Byte[] Hex { get; }
-
-            public IndexEntry(/*Int64 offset,*/ Byte[] key, Byte[] hex)
+            foreach( InteriorIndexKeyEntry key in interiorNode.KeyEntries )
             {
-                //this.Offset = offset;
-                this.Key    = key;
-                this.Hex    = hex;
-            }
-
-            public static IndexEntry Read(Byte[] keyBuffer, Int32 keyLength, Int32 indexEntryIdx)
-            {
-                Int32 startIdx = (keyLength + 4) * indexEntryIdx;
-
-                Byte[] key = new Byte[ keyLength ];
-                Array.Copy( keyBuffer, startIdx, key, 0, keyLength );
-
-                Byte[] hex = new Byte[4];
-                Array.Copy( keyBuffer, startIdx + keyLength, hex, 0, 4 );
-
-                return new IndexEntry( key, hex );
+                BaseCdxNode pointeeNode = index.ReadNode( key.NodePointer );
+                if( pointeeNode is InteriorCdxNode pointeeNodeIsInteriorNode )
+                {
+                    ReadInteriorNode( index, pointeeNodeIsInteriorNode );
+                }
             }
         }
 
@@ -111,7 +102,7 @@ namespace DbfDataReader.NetFx.Tests
         [Fact]
         public void Cdx_reader_should_work_3()
         {
-            const String prefix = @"C:\git\rss\DBD-XBase\t";
+            const String prefix = @"C:\git\cdx\DBD-XBase\t";
 
             var cdxFiles = new DirectoryInfo( prefix )
                 .GetFiles("*.cdx")
