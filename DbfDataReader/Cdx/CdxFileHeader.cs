@@ -28,7 +28,8 @@ namespace Dbf.Cdx
 #if DEBUG
             Int64 actualEnd = reader.BaseStream.Position;
             Int64 expectedEnd = start + 1024;
-            if( actualEnd != expectedEnd ) throw new InvalidOperationException("Did not read 1024 bytes exactly.");
+            if( actualEnd != expectedEnd ) throw new CdxException( CdxErrorCode.DidNotRead1024BytesInCdxIndexHeader );
+            if( ( options | CdxIndexOptions.All ) != CdxIndexOptions.All ) throw new CdxException( CdxErrorCode.InvalidCdxIndexOptionsAttributes );
 #endif
             
             return new CdxIndexHeader(

@@ -146,10 +146,10 @@ namespace Dbf.Cdx
 
                 keyValueSrc -= newBytesCount;
 
-                if( ( i == 0 && duplicateBytes > 0 ) || ( previousKeyData == null && duplicateBytes > 0 ) )
-                {
-                    throw new InvalidOperationException("KeyEntry specifies duplicate-bytes from previous entry, but there is no previous entry.");
-                }
+#if DEBUG
+                if( keyValueSrc < 0 ) throw new CdxException( CdxErrorCode.InvalidLeafNodeCalculatedKeyStartIndex );
+                if( ( i == 0 && duplicateBytes > 0 ) || ( previousKeyData == null && duplicateBytes > 0 ) ) throw new CdxException( CdxErrorCode.FirstLeafNodeKeyEntryHasDuplicateBytes );
+#endif
 
                 //////////////////
 

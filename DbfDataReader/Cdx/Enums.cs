@@ -9,7 +9,9 @@ namespace Dbf.Cdx
         Unique                =  1,
         HasForClause          =  8,
         IsCompactIndex        = 32,
-        IsCompoundIndexHeader = 64
+        IsCompoundIndexHeader = 64,
+
+        All = None | Unique | HasForClause | IsCompactIndex | IsCompoundIndexHeader
     }
 
     public enum CdxIndexOrder : ushort
@@ -23,6 +25,8 @@ namespace Dbf.Cdx
     {
         IndexNode = 0,
         RootNode  = 1,
-        LeafNode  = 2
+        LeafNode  = 2,
+
+        All = IndexNode | RootNode | LeafNode
     }
 }

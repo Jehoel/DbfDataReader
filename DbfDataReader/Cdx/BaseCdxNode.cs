@@ -15,6 +15,15 @@ namespace Dbf.Cdx
 
             Int64 offset = reader.BaseStream.Position;
             CdxNodeAttributes attributes = (CdxNodeAttributes)reader.ReadUInt16();
+
+#if DEBUG
+            // Sanity-check the start of a node. Attributes must be zero-or-more of /only/ the defined flags - otherwise what we're reading isn't the Attributes byte of a node.
+            if( ( attributes | CdxNodeAttributes.All ) != CdxNodeAttributes.All )
+            {
+                throw new CdxException( CdxErrorCode.InvalidNodeAttributes ); // Note that if this is raised, chances are it's a bug in this library instead of the CDX file being corrupted...
+            }
+#endif
+
             if( attributes.HasFlag( CdxNodeAttributes.LeafNode ) )
             {
                 return LeafCdxNode.Read( indexHeader, offset, attributes, reader );

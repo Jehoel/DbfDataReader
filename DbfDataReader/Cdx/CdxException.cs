@@ -23,7 +23,7 @@ namespace Dbf.Cdx
 
         private static String GetErrorMessage(CdxErrorCode code)
         {
-            throw new NotImplementedException();
+            return code.ToString(); // HACK, TODO: Add localized messages.
         }
     }
 
@@ -32,6 +32,14 @@ namespace Dbf.Cdx
         None,
         CompoundIndexHeaderDoesNotHaveCompoundIndexOption,
         RootNodeDoesNotHaveRootAttribute,
-        LeftmostNodeHasLeftSibling
+        LeftmostNodeHasLeftSibling,
+        InvalidNodeAttributes,
+        InvalidInteriorNodeKeyCount,
+        InvalidInteriorNodeLeftSibling,
+        InvalidInteriorNodeRightSibling,
+        InvalidLeafNodeCalculatedKeyStartIndex,
+        FirstLeafNodeKeyEntryHasDuplicateBytes,
+        DidNotRead1024BytesInCdxIndexHeader,
+        InvalidCdxIndexOptionsAttributes
     }
 }
