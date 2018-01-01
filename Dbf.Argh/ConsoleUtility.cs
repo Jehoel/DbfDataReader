@@ -72,7 +72,7 @@ namespace Dbf.Argh
 			return lineFormat;
 		}
 
-		public static UInt32 ReadUInt32(String prompt)
+		public static Int32 ReadUInt32(String prompt)
 		{
 			do
 			{
@@ -84,8 +84,8 @@ namespace Dbf.Argh
 				String input = Console.ReadLine();
 				Console.ResetColor();
 
-				UInt32 output;
-				if( UInt32.TryParse( input, NumberStyles.Integer, CultureInfo.CurrentCulture, out output ) ) return output;
+				Int32 output;
+				if( Int32.TryParse( input, NumberStyles.Integer, CultureInfo.CurrentCulture, out output ) ) return output;
 
 				Console.ForegroundColor = ConsoleColor.Yellow;
 				Console.WriteLine( "Could not parse \"{0}\" as UInt32.", input );

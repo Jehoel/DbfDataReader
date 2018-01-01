@@ -42,23 +42,16 @@ namespace DbfDataReader.NetFx.Tests
             };
 
             Assert.Equal( expectedIndexTags.Select( t => t.Item1 ), rootNode.IndexKeys.Select( key => key.StringKey ) );
-            Assert.Equal( expectedIndexTags.Select( t => t.Item2 ), rootNode.IndexKeys.Select( key => (Int32)key.RecordNumber ) );
+            Assert.Equal( expectedIndexTags.Select( t => t.Item2 ), rootNode.IndexKeys.Select( key => (Int32)key.DbfRecordNumber ) );
 
             foreach( CdxKeyEntry key in rootNode.IndexKeys )
             {
                 if( key.StringKey != "KEY" ) continue;
                 
-                InteriorCdxNode root2Node = (InteriorCdxNode)index.ReadCompactIndex( key.RecordNumber );
+                CdxIndex cdxIndex = index.ReadIndex( key.DbfRecordNumber );
 
-                Int32 keyLength = root2Node.IndexHeader.KeyLength;
+                Int32 keyLength = cdxIndex.Header.KeyLength;
                 Int32 recordLength = keyLength + 4;
-
-                List<IndexEntry> indexKeyEntries = new List<IndexEntry>( root2Node.KeyCount );
-                for( Int32 i = 0; i < root2Node.KeyCount; i++ )
-                {
-                    IndexEntry entry = IndexEntry.Read( root2Node.KeyValues, keyLength, i );
-                    indexKeyEntries.Add( entry );
-                }
                 
                 String y = "bar";
             }

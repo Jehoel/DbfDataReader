@@ -12,76 +12,96 @@ namespace Dbf.Argh
 	{
 		public static void Main(string[] args)
 		{
-			//DumpIndex( @"C:\git\cdx\DBD-XBase\t\rooms.cdx" );
+			//DumpIndexFile( @"C:\git\cdx\DBD-XBase\t\rooms.cdx" );
 
-			//DumpIndex( @"C:\git\rss\DbfDataReader\DbfDataReader\DbfDataReader.Tests\TestData\foxprodb\calls.CDX" );
+			//DumpIndexFile( @"C:\git\rss\DbfDataReader\DbfDataReader\DbfDataReader.Tests\TestData\foxprodb\calls.CDX" );
 
-			//DumpIndex( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" );
+			//DumpIndexFile( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" );
 
-			DumpIndex( @"C:\git\rss\DbfDataReader\Data\CUSTOMER-dbfMan-1.cdx" );
+			//DumpIndexFile( @"C:\git\rss\DbfDataReader\Data\CUSTOMER-dbfMan-1.cdx" );
+
+			DumpIndexFile( @"C:\git\rss\DbfDataReader\Data\ORDER.CDX" );
+
+			Console.ReadLine();
 		}
 
-		public static void DumpIndex(String fileName)
+		public class CdxIndexWithTag
+		{
+			public CdxIndex CdxIndex { get; }
+			public String   TagName { get; }
+
+			public CdxIndexWithTag(CdxIndex index, String tag)
+			{
+				this.CdxIndex = index;
+				this.TagName = tag;
+			}
+		}
+
+		private static CdxIndex OpenCdxFileAndPromptUserForCdxIndexTag(String fileName)
 		{
 			CdxFile indexFile = CdxFile.Open( fileName );
 			LeafCdxNode rootNode = (LeafCdxNode)indexFile.RootNode;
 
 			///////////////////////////////////////
 
-			var indexes = rootNode
+			Dictionary<Int32,CdxIndexWithTag> rootNodeHeaders = rootNode
 				.IndexKeys
-				.Select( ik => new { Key = ik, RootNode = indexFile.ReadCompactIndex( ik.RecordNumber ) } );
-
-			Dictionary<Int64,BaseCdxNode> rootNodeHeaders = indexes.ToDictionary( pair => pair.RootNode.Offset, pair => pair.RootNode );
+				.Select( ik => new { Key = ik, CdxIndex = indexFile.ReadIndex( ik.DbfRecordNumber ) } )
+				.ToDictionary( pair => (Int32)pair.CdxIndex.RootNode.Offset, pair => new CdxIndexWithTag( pair.CdxIndex, pair.Key.StringKey ) );
 
 			{
 				List<Object[]> output = new List<Object[]>();
 				output.Add( _indexHeaders );
-				output.AddRange( indexes.Select( pair => DumpIndex( indexFile, pair.Key, pair.RootNode ) ) );
+				output.AddRange( rootNodeHeaders.Select( kvp => DumpIndexObject( indexFile, kvp.Value.TagName, kvp.Value.CdxIndex.RootNode ) ) );
 				ConsoleUtility.PrintArray( output );
 			}
-			
-			BaseCdxNode parentNode = null;
 
-			while( true )
+			// Special-case: select a tag.
+			CdxIndex currentIndex = null;
+			do
 			{
-				UInt32 nodeOffset = ConsoleUtility.ReadUInt32( "Open node at offset? Or 0 to quit. Do not specify an Index Header offset.\r\nOffset must be a child of the current node." );
-				if( nodeOffset == 0 ) return;
+				Int32 openIndexWithRootNodeAtOffset = ConsoleUtility.ReadUInt32( "Open node at offset? Or 0 to quit. Do not specify an Index Header offset." );
+				if( openIndexWithRootNodeAtOffset == 0 ) return null;
 
-				BaseCdxNode node;
-
-				if( rootNodeHeaders.ContainsKey( nodeOffset ) )
+				if( rootNodeHeaders.TryGetValue( openIndexWithRootNodeAtOffset, out CdxIndexWithTag indexWithTag ) )
 				{
-					parentNode = rootNodeHeaders[ nodeOffset ];
-
-					Console.WriteLine("Specified node is a root node. Reading inner compact-index.");
-					node = indexFile.ReadNode( parentNode, nodeOffset );
+					Console.WriteLine("Selected index \"{0}\".", indexWithTag.TagName );
+					currentIndex = indexWithTag.CdxIndex;
 				}
 				else
 				{
-					if( parentNode == null )
-					{
-						Console.WriteLine("Error. No current parent node.");
-						return;
-					}
-
-					Console.WriteLine("Specified node is not a root node. Reading node directly.");
-					node = indexFile.ReadNode( parentNode, nodeOffset );
+					Console.ForegroundColor = ConsoleColor.Yellow;
+					Console.WriteLine( "Index with root node at offset {0} not found. Please specify a valid root node offset.", openIndexWithRootNodeAtOffset );
+					Console.ResetColor();
 				}
-				
-				parentNode = node;
 
+			}
+			while( currentIndex == null );
+
+			return currentIndex;
+		}
+
+		public static void DumpIndexFile(String fileName)
+		{
+			CdxIndex index = OpenCdxFileAndPromptUserForCdxIndexTag( fileName );
+
+			////////////////////////
+			
+			BaseCdxNode node = index.RootNode;
+
+			while( true )
+			{
 				{
 					List<Object[]> output = new List<Object[]>();
 					output.Add( _nodeHeaders );
 				
 					if( node is InteriorCdxNode intNode )
 					{
-						output.Add( new Object[] { "Interior", intNode.Attributes, intNode.LeftSibling, intNode.RightSibling, intNode.KeyCount, intNode.KeyValues } );
+						output.Add( new Object[] { "Interior", intNode.Attributes, intNode.LeftSibling, intNode.RightSibling, intNode.KeyCount } );
 					}
 					else if( node is LeafCdxNode extNode )
 					{
-						output.Add( new Object[] { "Exterior", extNode.Attributes, extNode.LeftSibling, extNode.RightSibling, extNode.KeyCount, "" } );
+						output.Add( new Object[] { "Exterior", extNode.Attributes, extNode.LeftSibling, extNode.RightSibling, extNode.KeyCount } );
 					}
 
 					ConsoleUtility.PrintArray( output );
@@ -109,6 +129,11 @@ namespace Dbf.Argh
 						ConsoleUtility.PrintArray( output );
 					}
 				}
+
+				Int32 nodeOffset = ConsoleUtility.ReadUInt32( "Open node at offset? Or 0 to quit. Do not specify an Index Header offset." );
+				if( nodeOffset == 0 ) return;
+
+				node = index.ReadNode( nodeOffset );
 			}
 
 			Console.ReadLine();
@@ -116,36 +141,36 @@ namespace Dbf.Argh
 
 		private static Object[] _indexHeaders = new Object[] { "Index file", "Tag", "Header offset", "Root node offset", "Expression", "Order", "Unique", "Root type", "Key length", "Filter" };
 
-		private static Object[] DumpIndex(CdxFile indexFile, CdxKeyEntry key, BaseCdxNode rootNode)
+		private static Object[] DumpIndexObject(CdxFile indexFile, String tagName, BaseCdxNode rootNode)
 		{
-			CdxFileHeader h = rootNode.IndexHeader;
+			CdxIndexHeader h = rootNode.IndexHeader;
 
 			String file = indexFile.FileInfo.Name;
-			String tag  = key.StringKey;
+			String tag  = tagName;
 			Object hoff = h.Offset;
 			Object roff = rootNode.Offset;
 			String expr = Encoding.ASCII.GetString( h.KeyExpressionPool, 0, h.KeyExpressionPoolLength );
 			String ordr = h.Order.ToString();
-			String uniq = h.Options.HasFlag( CompactIndexOptions.Unique ) ? "True" : "False";
+			String uniq = h.Options.HasFlag( CdxIndexOptions.Unique ) ? "True" : "False";
 			String type = rootNode is LeafCdxNode ? "Exterior" : "Interior";
 			Object klen = h.KeyLength;
-			String filt = h.Options.HasFlag( CompactIndexOptions.HasForClause ) ?
+			String filt = h.Options.HasFlag( CdxIndexOptions.HasForClause ) ?
 				Encoding.ASCII.GetString( h.KeyExpressionPool, h.KeyExpressionPoolLength, h.ForExpressionPoolLength ) :
 				String.Empty;
 
 			return new Object[] { file, tag, hoff, roff, expr, ordr, uniq, type, klen, filt };
 		}
 
-		private static readonly Object[] _nodeHeaders = new Object[] { "Type", "Attributes", "Left", "Right", "KeyCount", "KeyValue" };
+		private static readonly Object[] _nodeHeaders = new Object[] { "Type", "Attributes", "Left", "Right", "KeyCount" };
 
-		private static readonly Object[] _interiorKeyHeaders = new Object[] { "Key ASCII", "Key bytes", "Recno", "nPage" };
+		private static readonly Object[] _interiorKeyHeaders = new Object[] { "Key ASCII", "Key bytes", "Recno", "Node pointer" };
 
 		private static Object[] DumpInteriorKeyEntry(InteriorIndexKeyEntry entry)
 		{
 			String bytesAscii = Encoding.ASCII.GetString( entry.KeyBytes );
 			String bytesHex = BitConverter.ToString( entry.KeyBytes ); // returns dash-separated uppercase hex, e.g.: "00-AA-BB-FE"
 
-			return new Object[] { bytesAscii, bytesHex, entry.RecordNumber, entry.NPage };
+			return new Object[] { bytesAscii, bytesHex, entry.DbfRecordNumber, entry.NodePointer };
 		}
 
 		private static readonly Object[] _exteriorKeyHeaders = new Object[] { "Key ASCII", "Key bytes", "Number" };
@@ -155,7 +180,7 @@ namespace Dbf.Argh
 			String keyAscii = SafeString( entry.StringKey );
 			String keyBytes = BitConverter.ToString( entry.KeyBytes );
 
-			return new Object[] { keyAscii, keyBytes, entry.RecordNumber };
+			return new Object[] { keyAscii, keyBytes, entry.DbfRecordNumber };
 		}
 
 		private static String SafeString(String value)
