@@ -5,13 +5,14 @@ namespace Dbf.Cdx
     [Flags]
     public enum CdxIndexOptions : byte
     {
-        None                  =  0,
-        Unique                =  1,
-        HasForClause          =  8,
-        IsCompactIndex        = 32,
-        IsCompoundIndexHeader = 64,
+        None                  =   0,
+        Unique                =   1,
+        HasForClause          =   8,
+        IsCompactIndex        =  32,
+        IsCompoundIndexHeader =  64,
+        IsStructuralIndex     = 128,
 
-        All = None | Unique | HasForClause | IsCompactIndex | IsCompoundIndexHeader
+        All = None | Unique | HasForClause | IsCompactIndex | IsCompoundIndexHeader | IsStructuralIndex
     }
 
     public enum CdxIndexOrder : ushort
