@@ -82,57 +82,13 @@ namespace Dbf.Cdx
             if( packed.Length != IndexKeyBufferLength /* 488 */ ) throw new ArgumentException("Value must have a length of 488.", nameof(packed));
             if( packedKeyEntryLength < 2 ) throw new ArgumentException("Packed Key Entries must be at least 2 bytes long.");
 
-            
-
             List<LeafCdxKeyEntryData> temp = new List<LeafCdxKeyEntryData>();
 
             Byte[] previousKeyData = null;
             for( Int32 i = 0; i < keyCount; i++ )
             {
-//#if DEBUG
-                Byte[] packedEntry = new Byte[ packedKeyEntryLength ]; // this array exists so I can see what the current window of data looks like.
-                Array.Copy( packed, i * packedKeyEntryLength, packedEntry, 0, packedEntry.Length );
-                
-                // Idea: Reverse the array first!
-                Array.Reverse( packedEntry );
-
-                // Then convert to a long (assuming entries are never longer than 8 bytes):
-                if( packedKeyEntryLength > 8 ) throw new CdxException( CdxErrorCode.None ); // TODO: Error code
-
-                Int32 last = packedEntry.Length - 1;
-
-                Int64 packedEntryLong_Trail_Dupe_Recno =
-                    ( last >= 0 ? ( packedEntry[ last - 0 ] <<  0 ) : 0 ) |
-                    ( last >= 1 ? ( packedEntry[ last - 1 ] <<  8 ) : 0 ) |
-                    ( last >= 2 ? ( packedEntry[ last - 2 ] << 16 ) : 0 ) |
-                    ( last >= 3 ? ( packedEntry[ last - 3 ] << 24 ) : 0 ) |
-                    ( last >= 4 ? ( packedEntry[ last - 4 ] << 32 ) : 0 ) |
-                    ( last >= 5 ? ( packedEntry[ last - 5 ] << 40 ) : 0 ) |
-                    ( last >= 6 ? ( packedEntry[ last - 6 ] << 48 ) : 0 ) |
-                    ( last >= 7 ? ( packedEntry[ last - 7 ] << 56 ) : 0 );
-
-                // Then extract each component:
-                // Always use 32 bits to get the record-number:
-                
-                Int32 recordNumber = (Int32)( packedEntryLong_Trail_Dupe_Recno & recordNumberInfo.Mask );
-
-                Int64 packedEntryLong_Trail_Dupe = packedEntryLong_Trail_Dupe_Recno >> recordNumberInfo.BitCount;
-
-                Byte duplicateBytes = (Byte)( packedEntryLong_Trail_Dupe & duplicateBytesInfo.Mask );
-
-                Int64 packedEntryLong_Trail = packedEntryLong_Trail_Dupe >> duplicateBytesInfo.BitCount;
-
-                Byte trailingBytes = (Byte)( packedEntryLong_Trail & trailingBytesInfo.Mask );
-
-                LeafCdxKeyEntryData record = new LeafCdxKeyEntryData( (UInt32)recordNumber, duplicateBytes, trailingBytes );
+                LeafCdxKeyEntryData record = LeafCdxKeyEntryData.Read( packed, i * packedKeyEntryLength, packedKeyEntryLength, recordNumberInfo, duplicateBytesInfo, trailingBytesInfo );
                 temp.Add( record );
-
-//#endif
-
-                //Int32 a = i * packedKeyEntryLength; // start of a packed keyEntry
-
-                //LeafCdxKeyEntryData record = LeafCdxKeyEntryData.Read( packed, a, packedKeyEntryLength, recordNumberInfo, duplicateBytesInfo, trailingBytesInfo );
-                //temp.Add( record );
             }
 
             // Get the key values:
@@ -173,10 +129,6 @@ namespace Dbf.Cdx
                 previousKeyData = keyData;
             }
         }
-
-        
-
-
 
         #endregion
 

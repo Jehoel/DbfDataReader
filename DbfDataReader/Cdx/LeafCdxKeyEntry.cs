@@ -9,11 +9,11 @@ namespace Dbf.Cdx
     {
         private readonly Byte[] keyBytes;
 
-        internal LeafCdxKeyEntry(Byte[] keyData, UInt32 recordNumber, Int32 duplicateBytes, Int32 trailingBytes)
+        internal LeafCdxKeyEntry(Byte[] keyData, Int32 recordNumber, Byte duplicateBytes, Byte trailingBytes)
         {
             this.keyBytes        = keyData;
 
-            this.DbfRecordNumber = recordNumber;
+            this.DbfRecordNumber = (UInt32)recordNumber;
             this.DuplicateBytes  = duplicateBytes;
             this.TrailingBytes   = trailingBytes;
         }
@@ -22,11 +22,10 @@ namespace Dbf.Cdx
 
         Boolean IKey.IsInteriorNode => false;
 
-        [CLSCompliant(false)]
-        public   UInt32 DbfRecordNumber   { get; }
+        public  UInt32 DbfRecordNumber   { get; }
         
-        internal Int32  DuplicateBytes { get; }
-        internal Int32  TrailingBytes  { get; }
+        public  Byte  DuplicateBytes { get; }
+        public  Byte  TrailingBytes  { get; }
 
         private String stringKey;
         public String StringKey => this.stringKey ?? ( this.stringKey = Encoding.ASCII.GetString( this.keyBytes, 0, count: this.keyBytes.Length - this.TrailingBytes ) );
@@ -34,71 +33,65 @@ namespace Dbf.Cdx
 
     internal class LeafCdxKeyEntryData
     {
-        public LeafCdxKeyEntryData(UInt32 recordNumber, Byte duplicateBytes, Byte trailingBytes)
+        public LeafCdxKeyEntryData(Int32 recordNumber, Byte duplicateBytes, Byte trailingBytes)
         {
             this.RecordNumber = recordNumber;
             this.DuplicateBytes = duplicateBytes;
             this.TrailingBytes = trailingBytes;
         }
 
-        public UInt32 RecordNumber   { get; }
-        public Byte   DuplicateBytes { get; }
-        public Byte   TrailingBytes  { get; }
+        public Int32 RecordNumber   { get; }
+        public Byte  DuplicateBytes { get; }
+        public Byte  TrailingBytes  { get; }
 
         public static LeafCdxKeyEntryData Read(Byte[] buffer, Int32 startIndex, Int32 recordLength, KeyComponent recordNumberInfo, KeyComponent duplicateBytesInfo, KeyComponent trailingBytesInfo)
         {
-            Int32 a = startIndex;
+            if( recordLength > 8 ) throw new CdxException( CdxErrorCode.None ); // TODO: Error code
 
-            UInt32 recordNumber;
-            {
-                Int32 recordNumberInt;
+            Int64 packedEntryLong_Trail_Dupe_Recno = GetPackedEntryAsLong( buffer, startIndex, recordLength );
 
-                // RecordNumbers are in big-endian order.
-                if( recordNumberInfo.BitCount <= 8 )
-                {
-                    recordNumberInt = buffer[ a ];
-                }
-                else if( recordNumberInfo.BitCount <= 16 )
-                {
-                    recordNumberInt = ( buffer[ a + 1 ] << 8 ) | buffer[ a + 0 ];
-                }
-                else if( recordNumberInfo.BitCount <= 24 )
-                {
-                    recordNumberInt = ( buffer[ a + 2 ] << 16 ) | ( buffer[ a + 1 ] << 8 ) | buffer[ a + 0 ];
-                }
-                else if( recordNumberInfo.BitCount <= 32 )
-                {
-                    recordNumberInt = ( buffer[ a + 3 ] << 24 ) | ( buffer[ a + 2 ] << 16 ) | ( buffer[ a + 1 ] << 8 ) | buffer[ a + 0 ];
-                }
-                else
-                {
-                    // manual for-loop? but this number will never be bigger than 2^32... so just throw for now.
-                    throw new NotSupportedException("RecordNumber.BitCount values bigger than 32 are not supported.");
-                }
+            // Then extract each component:
+            // Always use 32 bits to get the record-number:
+                
+            Int32 recordNumber = (Int32)( packedEntryLong_Trail_Dupe_Recno & recordNumberInfo.Mask );
 
-                recordNumber = (UInt32)recordNumberInt & recordNumberInfo.Mask;
-            }
+            Int64 packedEntryLong_Trail_Dupe = packedEntryLong_Trail_Dupe_Recno >> recordNumberInfo.BitCount;
 
-            UInt32 duplicateBytes;
-            UInt32 trailingBytes;
-            {
-                // Get the last two bytes of the array. Note we assume packedKeyEntryLength is >=2
-                Byte bN0 = buffer[ a + (recordLength-1) ]; // b[N-0]
-                Byte bN1 = buffer[ a + (recordLength-2) ]; // b[N-1]
-                Int32 trailingAndDuplicate = ( bN1 << 8 ) | bN0;
+            Byte duplicateBytes = (Byte)( packedEntryLong_Trail_Dupe & duplicateBytesInfo.Mask );
 
-                duplicateBytes = (UInt32)( trailingAndDuplicate & duplicateBytesInfo.Mask );
+            Int64 packedEntryLong_Trail = packedEntryLong_Trail_Dupe >> duplicateBytesInfo.BitCount;
 
-                /////
+            Byte trailingBytes = (Byte)( packedEntryLong_Trail & trailingBytesInfo.Mask );
 
-                trailingBytes = (UInt32)( trailingAndDuplicate >> duplicateBytesInfo.BitCount );
-                trailingBytes &= trailingBytesInfo.Mask;
+            LeafCdxKeyEntryData record = new LeafCdxKeyEntryData( recordNumber, duplicateBytes, trailingBytes );
+            return record;
+        }
 
-                if( duplicateBytes > Byte.MaxValue ) throw new CdxException( CdxErrorCode.None ); // TODO: Actual error code.
-                if( trailingBytes  > Byte.MaxValue ) throw new CdxException( CdxErrorCode.None ); // TODO: Actual error code.
-            }
+        private static Int64 GetPackedEntryAsLong(Byte[] buffer, Int32 startIndex, Int32 recordLength)
+        {
+            // TODO: Find a way to reverse the bytes without needing the temporary buffer `packedEntry`.
 
-            return new LeafCdxKeyEntryData( recordNumber, (Byte)duplicateBytes, (Byte)trailingBytes );
+            Byte[] packedEntry = new Byte[ recordLength ]; // this array exists so I can see what the current window of data looks like.
+            Array.Copy( buffer, startIndex, packedEntry, 0, packedEntry.Length );
+
+            // Idea: Reverse the array first!
+            Array.Reverse( packedEntry );
+
+            // Then convert to a long (assuming entries are never longer than 8 bytes):
+            Int32 z = recordLength - 1; // ( startIndex + recordLength ) - 1;
+            Int32 l = recordLength;
+
+            Int64 packedEntryLong_Trail_Dupe_Recno =
+                ( l > 0 ? ( packedEntry[ z - 0 ] <<  0 ) : 0 ) |
+                ( l > 1 ? ( packedEntry[ z - 1 ] <<  8 ) : 0 ) |
+                ( l > 2 ? ( packedEntry[ z - 2 ] << 16 ) : 0 ) |
+                ( l > 3 ? ( packedEntry[ z - 3 ] << 24 ) : 0 ) |
+                ( l > 4 ? ( packedEntry[ z - 4 ] << 32 ) : 0 ) |
+                ( l > 5 ? ( packedEntry[ z - 5 ] << 40 ) : 0 ) |
+                ( l > 6 ? ( packedEntry[ z - 6 ] << 48 ) : 0 ) |
+                ( l > 7 ? ( packedEntry[ z - 7 ] << 56 ) : 0 );
+
+            return packedEntryLong_Trail_Dupe_Recno;
         }
     }
 
