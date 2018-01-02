@@ -61,6 +61,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncBinaryReader\AsyncBinaryReader.cs" />
+    <Compile Include="AsyncBinaryReader\DotNetInternals.cs" />
     <Compile Include="Cdx\BaseCdxNode.cs" />
     <Compile Include="Cdx\CdxException.cs" />
     <Compile Include="Cdx\CdxFile.cs" />

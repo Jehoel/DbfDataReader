@@ -1,37 +1,45 @@
-﻿// ==++==
-// 
-//   Copyright (c) Microsoft Corporation.  All rights reserved.
-// 
-// ==--==
-/*============================================================
-**
-** Class: BinaryReader
-** 
-** <OWNER>gpaperin</OWNER>
-**
-**
-** Purpose: Wraps a stream and provides convenient read functionality
-** for strings and primitive types.
-**
-**
-============================================================*/
-namespace System.IO {
+﻿using System;
+using System.Runtime;
+using System.Text;
+using System.IO;
+using System.Globalization;
+using System.Diagnostics.Contracts;
+using System.Security;
 
-    using System;
-    using System.Runtime;
-    using System.Text;
-    using System.Globalization;
-    using System.Diagnostics.Contracts;
-    using System.Security;
+namespace Dbf
+{
+    class __Error
+    {
+        public static Exception FileNotOpen()
+        {
+            throw new NotImplementedException();
+        }
 
-    [System.Runtime.InteropServices.ComVisible(true)]
-    public class BinaryReader : IDisposable
+        public static Exception EndOfFile()
+        {
+            throw new NotImplementedException();
+        }
+    }
+    class Environment
+    {
+        public static String GetResourceString(String name)
+        {
+            return name;
+        }
+        public static String GetResourceString(String name, Int32 length)
+        {
+            return name;
+        }
+    }
+
+    public class TodoAsyncBinaryReader : IDisposable
     {
         private const int MaxCharBytesSize = 128;
 
         private Stream   m_stream;
         private byte[]   m_buffer;
         private Decoder  m_decoder;
+        private DecoderNlsHelper m_decoderNls;
         private byte[]   m_charBytes;
         private char[]   m_singleChar;
         private char[]   m_charBuffer;
@@ -42,13 +50,13 @@ namespace System.IO {
         private bool     m_isMemoryStream; // "do we sit on MemoryStream?" for Read/ReadInt32 perf
         private bool     m_leaveOpen;
 
-        public BinaryReader(Stream input) : this(input, new UTF8Encoding(), false) {
+        public TodoAsyncBinaryReader(Stream input) : this(input, new UTF8Encoding(), false) {
         }
 
-        public BinaryReader(Stream input, Encoding encoding) : this(input, encoding, false) {
+        public TodoAsyncBinaryReader(Stream input, Encoding encoding) : this(input, encoding, false) {
         }
 
-        public BinaryReader(Stream input, Encoding encoding, bool leaveOpen) {
+        public TodoAsyncBinaryReader(Stream input, Encoding encoding, bool leaveOpen) {
             if (input==null) {
                 throw new ArgumentNullException("input");
             }
@@ -60,6 +68,7 @@ namespace System.IO {
             Contract.EndContractBlock();
             m_stream = input;
             m_decoder = encoding.GetDecoder();
+            m_decoderNls = new DecoderNlsHelper( m_decoder );
             m_maxCharsSize = encoding.GetMaxCharCount(MaxCharBytesSize);
             int minBufferSize = encoding.GetMaxByteCount(1);  // max bytes per one char
             if (minBufferSize < 16) 
@@ -171,19 +180,19 @@ namespace System.IO {
         }
 
         public virtual int ReadInt32() {
-            if (m_isMemoryStream) {
-                if (m_stream==null) __Error.FileNotOpen();
-                // read directly from MemoryStream buffer
-                MemoryStream mStream = m_stream as MemoryStream;
-                Contract.Assert(mStream != null, "m_stream as MemoryStream != null");
-
-                return mStream.InternalReadInt32();
-            }
-            else
-            {
+//            if (m_isMemoryStream) {
+//                if (m_stream==null) __Error.FileNotOpen();
+//                // read directly from MemoryStream buffer
+//                MemoryStream mStream = m_stream as MemoryStream;
+//                Contract.Assert(mStream != null, "m_stream as MemoryStream != null");
+//
+//                return mStream.InternalReadInt32();
+//            }
+//            else
+//            {
                 FillBuffer(4);
                 return (int)(m_buffer[0] | m_buffer[1] << 8 | m_buffer[2] << 16 | m_buffer[3] << 24);
-            }
+//            }
         }
 
         [CLSCompliant(false)]
@@ -211,6 +220,7 @@ namespace System.IO {
             return ((ulong)hi) << 32 | lo;
         }
 
+#if UNSAFE
         [System.Security.SecuritySafeCritical]  // auto-generated
         public virtual unsafe float ReadSingle() {
             FillBuffer(4);
@@ -229,11 +239,12 @@ namespace System.IO {
             ulong tmpBuffer = ((ulong)hi) << 32 | lo;
             return *((double*)&tmpBuffer);
         }
+#endif
 
         public virtual decimal ReadDecimal() {
             FillBuffer(16);
             try {
-                return Decimal.ToDecimal(m_buffer);
+                return DotNetInternals.Decimal_ToDecimal( m_buffer ); // Decimal.ToDecimal(m_buffer);
             }
             catch (ArgumentException e) {
                 // ReadDecimal cannot leak out ArgumentException
@@ -286,14 +297,13 @@ namespace System.IO {
                 if (currPos == 0 && n == stringLength)
                     return new String(m_charBuffer, 0, charsRead);
 
-                if (sb == null)
-                    sb = StringBuilderCache.Acquire(stringLength); // Actual string length in chars may be smaller.
+                if (sb == null) sb = new StringBuilder();
                 sb.Append(m_charBuffer, 0, charsRead);
                 currPos +=n;
             
             } while (currPos<stringLength);
 
-            return StringBuilderCache.GetStringAndRelease(sb);
+            return sb.ToString();
         }
 
         [SecuritySafeCritical]
@@ -321,6 +331,8 @@ namespace System.IO {
             return InternalReadChars(buffer, index, count);
         }
 
+
+
         [SecurityCritical]
         private int InternalReadChars(char[] buffer, int index, int count) {
             Contract.Requires(buffer != null);
@@ -342,8 +354,9 @@ namespace System.IO {
                 numBytes = charsRemaining;
 
                 // special case for DecoderNLS subclasses when there is a hanging byte from the previous loop
-                DecoderNLS decoder = m_decoder as DecoderNLS;
-                if (decoder != null && decoder.HasState && numBytes > 1) {
+
+//              DecoderNLS decoder = m_decoder as DecoderNLS;
+                if (/*decoder != null && decoder.HasState &&*/ m_decoderNls.HasState && numBytes > 1) {
                     numBytes -= 1;
                 }
 
@@ -354,20 +367,20 @@ namespace System.IO {
 
                 int position = 0;
                 byte[] byteBuffer = null;
-                if (m_isMemoryStream)
-                {
-                    MemoryStream mStream = m_stream as MemoryStream;
-                    Contract.Assert(mStream != null, "m_stream as MemoryStream != null");
-
-                    position = mStream.InternalGetPosition();
-                    numBytes = mStream.InternalEmulateRead(numBytes);
-                    byteBuffer = mStream.InternalGetBuffer();
-                }
-                else
-                {
+//              if (m_isMemoryStream)
+//              {
+//                  MemoryStream mStream = m_stream as MemoryStream;
+//                  Contract.Assert(mStream != null, "m_stream as MemoryStream != null");
+                
+//                  position = mStream.InternalGetPosition();
+//                  numBytes = mStream.InternalEmulateRead(numBytes);
+//                  byteBuffer = mStream.InternalGetBuffer();
+//              }
+//              else
+//              {
                     numBytes = m_stream.Read(m_charBytes, 0, numBytes);
                     byteBuffer = m_charBytes;                  
-                }
+//              }
 
                 if (numBytes == 0) {
                     return (count - charsRemaining);
@@ -385,13 +398,31 @@ namespace System.IO {
                        throw new ArgumentOutOfRangeException("charsRemaining");
                     }
 
+#if UNSAFE
                     unsafe {
                         fixed (byte* pBytes = byteBuffer) {
                             fixed (char* pChars = buffer) {
-                                charsRead = m_decoder.GetChars(pBytes + position, numBytes, pChars + index, charsRemaining, false);
+                                charsRead = m_decoder.GetChars(
+                                    bytes    : pBytes + position,
+                                    byteCount: numBytes,
+                                    chars    : pChars + index,
+                                    charCount: charsRemaining,
+                                    flush    : false
+                                );
                             }
                         }
                     }
+#else
+                    charsRead = m_decoder.GetChars(
+                        bytes    : byteBuffer,
+                        byteIndex: position,
+                        byteCount: numBytes,
+                        chars    : buffer,
+                        charIndex: index,
+                        // TODO: What about 'charsRemaining'?
+                        flush    : false
+                    );
+#endif
                 }
 
                 charsRemaining -= charsRead;
@@ -473,6 +504,8 @@ namespace System.IO {
             return m_singleChar[0];
         }
 
+        private static readonly Char[] _emptyCharArray = new Char[0];
+
         [SecuritySafeCritical]
         public virtual char[] ReadChars(int count) {
             if (count<0) {
@@ -486,7 +519,7 @@ namespace System.IO {
             }
 
             if (count == 0) {
-                return EmptyArray<Char>.Value;
+                return _emptyCharArray;
             }
 
             // SafeCritical: we own the chars buffer, and therefore can guarantee that the index and count are valid
@@ -494,7 +527,7 @@ namespace System.IO {
             int n = InternalReadChars(chars, 0, count);
             if (n!=count) {
                 char[] copy = new char[n];
-                Buffer.InternalBlockCopy(chars, 0, copy, 0, 2*n); // sizeof(char)
+                DotNetInternals.Buffer_InternalBlockCopy(chars, 0, copy, 0, 2*n); // Buffer.InternalBlockCopy(chars, 0, copy, 0, 2*n); // sizeof(char)
                 chars = copy;
             }
 
@@ -518,6 +551,8 @@ namespace System.IO {
             return m_stream.Read(buffer, index, count);
         }
 
+        private static readonly Byte[] _emptyByteArray = new Byte[0];
+
         public virtual byte[] ReadBytes(int count) {
             if (count < 0) throw new ArgumentOutOfRangeException("count", Environment.GetResourceString("ArgumentOutOfRange_NeedNonNegNum"));
             Contract.Ensures(Contract.Result<byte[]>() != null);
@@ -526,7 +561,7 @@ namespace System.IO {
             if (m_stream==null) __Error.FileNotOpen();
 
             if (count == 0) {
-                return EmptyArray<Byte>.Value;
+                return _emptyByteArray;
             }
 
             byte[] result = new byte[count];
@@ -543,7 +578,7 @@ namespace System.IO {
             if (numRead != result.Length) {
                 // Trim array.  This should happen on EOF & possibly net streams.
                 byte[] copy = new byte[numRead];
-                Buffer.InternalBlockCopy(result, 0, copy, 0, numRead);
+                DotNetInternals.Buffer_InternalBlockCopy(result, 0, copy, 0, numRead); //Buffer.InternalBlockCopy(result, 0, copy, 0, numRead);
                 result = copy;
             }
 
