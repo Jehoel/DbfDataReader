@@ -16,11 +16,11 @@ namespace Dbf.Argh
 
 			//DumpIndexFile( @"C:\git\rss\DbfDataReader\DbfDataReader\DbfDataReader.Tests\TestData\foxprodb\calls.CDX" );
 
-			//DumpIndexFile( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" );
+			DumpIndexFile( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" );
 
 			//DumpIndexFile( @"C:\git\rss\DbfDataReader\Data\CUSTOMER-dbfMan-1.cdx" );
 
-			DumpIndexFile( @"C:\git\rss\DbfDataReader\Data\ORDER.CDX" );
+			//DumpIndexFile( @"C:\git\rss\DbfDataReader\Data\ORDER.CDX" );
 
 			Console.ReadLine();
 		}

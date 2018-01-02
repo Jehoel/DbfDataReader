@@ -82,107 +82,101 @@ namespace Dbf.Cdx
             if( packed.Length != IndexKeyBufferLength /* 488 */ ) throw new ArgumentException("Value must have a length of 488.", nameof(packed));
             if( packedKeyEntryLength < 2 ) throw new ArgumentException("Packed Key Entries must be at least 2 bytes long.");
 
-            Int32 keyValueSrc = packed.Length;
+            
 
-            entries = new LeafCdxKeyEntry[ keyCount ];
+            List<LeafCdxKeyEntryData> temp = new List<LeafCdxKeyEntryData>();
 
             Byte[] previousKeyData = null;
             for( Int32 i = 0; i < keyCount; i++ )
             {
-#if DEBUG
+//#if DEBUG
                 Byte[] packedEntry = new Byte[ packedKeyEntryLength ]; // this array exists so I can see what the current window of data looks like.
                 Array.Copy( packed, i * packedKeyEntryLength, packedEntry, 0, packedEntry.Length );
-#endif
+                
+                // Idea: Reverse the array first!
+                Array.Reverse( packedEntry );
 
-                Int32 a = i * packedKeyEntryLength; // start of a packed keyEntry
+                // Then convert to a long (assuming entries are never longer than 8 bytes):
+                if( packedKeyEntryLength > 8 ) throw new CdxException( CdxErrorCode.None ); // TODO: Error code
 
-                UInt32 recordNumber;
-                {
-                    Int32 recordNumberInt;
+                Int32 last = packedEntry.Length - 1;
 
-                    // RecordNumbers are in big-endian order.
-                    if( recordNumberInfo.BitCount <= 8 )
-                    {
-                        recordNumberInt = packed[ a ];
-                    }
-                    else if( recordNumberInfo.BitCount <= 16 )
-                    {
-                        recordNumberInt = ( packed[ a + 1 ] << 8 ) | packed[ a + 0 ];
-                    }
-                    else if( recordNumberInfo.BitCount <= 24 )
-                    {
-                        recordNumberInt = ( packed[ a + 2 ] << 16 ) | ( packed[ a + 1 ] << 8 ) | packed[ a + 0 ];
-                    }
-                    else if( recordNumberInfo.BitCount <= 32 )
-                    {
-                        recordNumberInt = ( packed[ a + 3 ] << 24 ) | ( packed[ a + 2 ] << 16 ) | ( packed[ a + 1 ] << 8 ) | packed[ a + 0 ];
-                    }
-                    else
-                    {
-                        // manual for-loop? but this number will never be bigger than 2^32... so just throw for now.
-                        throw new NotSupportedException("RecordNumber.BitCount values bigger than 32 are not supported.");
-                    }
+                Int64 packedEntryLong_Trail_Dupe_Recno =
+                    ( last >= 0 ? ( packedEntry[ last - 0 ] <<  0 ) : 0 ) |
+                    ( last >= 1 ? ( packedEntry[ last - 1 ] <<  8 ) : 0 ) |
+                    ( last >= 2 ? ( packedEntry[ last - 2 ] << 16 ) : 0 ) |
+                    ( last >= 3 ? ( packedEntry[ last - 3 ] << 24 ) : 0 ) |
+                    ( last >= 4 ? ( packedEntry[ last - 4 ] << 32 ) : 0 ) |
+                    ( last >= 5 ? ( packedEntry[ last - 5 ] << 40 ) : 0 ) |
+                    ( last >= 6 ? ( packedEntry[ last - 6 ] << 48 ) : 0 ) |
+                    ( last >= 7 ? ( packedEntry[ last - 7 ] << 56 ) : 0 );
 
-                    recordNumber = (UInt32)recordNumberInt & recordNumberInfo.Mask;
-                }
+                // Then extract each component:
+                // Always use 32 bits to get the record-number:
+                
+                Int32 recordNumber = (Int32)( packedEntryLong_Trail_Dupe_Recno & recordNumberInfo.Mask );
 
-                UInt32 duplicateBytes;
-                UInt32 trailingBytes;
-                {
-                    // Get the last two bytes of the array. Note we assume packedKeyEntryLength is >=2
-                    Byte bN0 = packed[ a + (packedKeyEntryLength-1) ]; // b[N-0]
-                    Byte bN1 = packed[ a + (packedKeyEntryLength-2) ]; // b[N-1]
-                    Int32 trailingAndDuplicate = ( bN1 << 8 ) | bN0;
+                Int64 packedEntryLong_Trail_Dupe = packedEntryLong_Trail_Dupe_Recno >> recordNumberInfo.BitCount;
 
-                    duplicateBytes = (UInt32)( trailingAndDuplicate & duplicateBytesInfo.Mask );
+                Byte duplicateBytes = (Byte)( packedEntryLong_Trail_Dupe & duplicateBytesInfo.Mask );
 
-                    /////
+                Int64 packedEntryLong_Trail = packedEntryLong_Trail_Dupe >> duplicateBytesInfo.BitCount;
 
-                    trailingBytes = (UInt32)( trailingAndDuplicate >> duplicateBytesInfo.BitCount );
-                    trailingBytes &= trailingBytesInfo.Mask;
-                }
+                Byte trailingBytes = (Byte)( packedEntryLong_Trail & trailingBytesInfo.Mask );
 
-                Int32 newBytesCount = (Int32)(keyLength - duplicateBytes - trailingBytes);
+                LeafCdxKeyEntryData record = new LeafCdxKeyEntryData( (UInt32)recordNumber, duplicateBytes, trailingBytes );
+                temp.Add( record );
+
+//#endif
+
+                //Int32 a = i * packedKeyEntryLength; // start of a packed keyEntry
+
+                //LeafCdxKeyEntryData record = LeafCdxKeyEntryData.Read( packed, a, packedKeyEntryLength, recordNumberInfo, duplicateBytesInfo, trailingBytesInfo );
+                //temp.Add( record );
+            }
+
+            // Get the key values:
+
+            entries = new LeafCdxKeyEntry[ keyCount ];
+
+            Int32 keyValueSrc = packed.Length;
+
+            for( Int32 i = 0; i < keyCount; i++ )
+            {
+                LeafCdxKeyEntryData record = temp[i];
+
+                Int32 newBytesCount = keyLength - record.DuplicateBytes - record.TrailingBytes;
 
                 keyValueSrc -= newBytesCount;
 
 #if DEBUG
                 if( keyValueSrc < 0 ) throw new CdxException( CdxErrorCode.InvalidLeafNodeCalculatedKeyStartIndex );
-                if( ( i == 0 && duplicateBytes > 0 ) || ( previousKeyData == null && duplicateBytes > 0 ) ) throw new CdxException( CdxErrorCode.FirstLeafNodeKeyEntryHasDuplicateBytes );
+                if( ( i == 0 && record.DuplicateBytes > 0 ) || ( previousKeyData == null && record.DuplicateBytes > 0 ) ) throw new CdxException( CdxErrorCode.FirstLeafNodeKeyEntryHasDuplicateBytes );
 #endif
 
                 //////////////////
 
                 Byte[] keyData = new Byte[ keyLength ];// - trailingBytes ];
-                for( UInt32 d = 0; d < duplicateBytes; d++ )
+                for( UInt32 d = 0; d < record.DuplicateBytes; d++ )
                 {
                     keyData[d] = previousKeyData[d];
                 }
 
-                for( UInt32 b = duplicateBytes, src = 0; src < newBytesCount; b++, src++ )
+                for( UInt32 b = record.DuplicateBytes, src = 0; src < newBytesCount; b++, src++ )
                 {
                     keyData[b] = packed[ keyValueSrc + src ];
                 }
 
-                LeafCdxKeyEntry keyEntry = new LeafCdxKeyEntry( keyData, recordNumber, (Int32)duplicateBytes, (Int32)trailingBytes );
+                LeafCdxKeyEntry keyEntry = new LeafCdxKeyEntry( keyData, record.RecordNumber, record.DuplicateBytes, record.TrailingBytes );
                 entries[i] = keyEntry;
 
                 previousKeyData = keyData;
             }
         }
 
-        /// <summary>CDX Key Component info.</summary>
-        private struct KeyComponent
-        {
-            public KeyComponent(UInt32 mask, Byte bitCount)
-            {
-                this.Mask     = mask;
-                this.BitCount = bitCount;
-            }
+        
 
-            public readonly UInt32 Mask;
-            public readonly Byte   BitCount;
-        }
+
 
         #endregion
 
