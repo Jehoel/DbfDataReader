@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Dbf.Cdx
 {
@@ -12,10 +14,11 @@ namespace Dbf.Cdx
 
         private CdxFile(FileInfo fileInfo, CdxIndexHeader header, BaseCdxNode rootNode, BinaryReader reader)
         {
-            this.FileInfo = fileInfo;
-            this.Header   = header;
-            this.RootNode = rootNode;
-            this.reader   = reader;
+            this.FileInfo      = fileInfo;
+            this.Header        = header;
+            this.RootNode      = rootNode;
+
+            this.reader        = reader;
         }
 
         public void Dispose()
@@ -48,8 +51,6 @@ namespace Dbf.Cdx
                 // The root node (and its siblings? or is it limited to only one node?) is special
                 // ...its keys are actually "tag names" which are the names of the sub-indexes it contains.
 
-                // Question: Should the tags be preloaded?
-
                 return new CdxFile( new FileInfo( fileName ), header, rootNode, rdr );
             }
             catch
@@ -59,15 +60,18 @@ namespace Dbf.Cdx
             }
         }
 
-        public CdxIndex ReadIndex(String tagName)
+        public IDictionary<String,CdxIndex> ReadTaggedIndexes()
         {
-            throw new NotImplementedException();
+            CdxIndex tagIndex = new CdxIndex( this, this.Header, this.RootNode );
 
-            // search this.RootNode for the tagName
-            // then return the CdxIndex for it.
+            List<LeafCdxKeyEntry> keys = IndexSearcher.GetAllKeys( tagIndex ).ToList(); // ToList() so we don't move the BinaryReader all over the place.
+            
+            return keys.ToDictionary(
+                key => key.StringKey,
+                key => this.ReadIndex( key.DbfRecordNumber ) // In the case of tagged-indexes, the 'recno' value (`DbfRecordNumber`) is actually the offset in the CDX file.
+            );
         }
 
-        // TODO: The return-type of this function should be a derived type, e.g. CompactIndexRoot or something to avoid confusion.
         public CdxIndex ReadIndex(UInt32 compactIndexOffsetInCompoundIndexFile)
         {
             this.reader.BaseStream.Seek( compactIndexOffsetInCompoundIndexFile, SeekOrigin.Begin );

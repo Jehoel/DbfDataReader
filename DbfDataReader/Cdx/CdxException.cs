@@ -40,6 +40,7 @@ namespace Dbf.Cdx
         InvalidLeafNodeCalculatedKeyStartIndex,
         FirstLeafNodeKeyEntryHasDuplicateBytes,
         DidNotRead1024BytesInCdxIndexHeader,
-        InvalidCdxIndexOptionsAttributes
+        InvalidCdxIndexOptionsAttributes,
+        InteriorNodeHasNoKeyEntries
     }
 }

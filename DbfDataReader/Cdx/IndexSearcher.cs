@@ -5,6 +5,47 @@ namespace Dbf.Cdx
 {
     public static class IndexSearcher
     {
+        private static LeafCdxNode GetLeftmostLeafNode(CdxIndex index)
+        {
+            BaseCdxNode node = index.RootNode;
+            LeafCdxNode leftmostLeafNode = node as LeafCdxNode;
+            if( leftmostLeafNode == null )
+            {
+                while( node != null )
+                {
+                    InteriorCdxNode interiorNode = (InteriorCdxNode)node;
+                    if( interiorNode.KeyEntries.Length == 0 ) throw new CdxException( CdxErrorCode.InteriorNodeHasNoKeyEntries );
+
+                    node = index.ReadNode( interiorNode.KeyEntries[0].NodePointer );
+                    leftmostLeafNode = node as LeafCdxNode;
+                    if( leftmostLeafNode != null ) node = null;
+                }
+            }
+
+            // As we always chose the 0th key of an interior-node, the leftmost should have no left sibling:
+            if( leftmostLeafNode.LeftSibling != BaseCdxNode.NoSibling ) throw new CdxException( CdxErrorCode.LeftmostNodeHasLeftSibling );
+
+            return leftmostLeafNode;
+        }
+
+        public static IEnumerable<LeafCdxKeyEntry> GetAllKeys(CdxIndex index)
+        {
+            if( index == null ) throw new ArgumentNullException(nameof(index));
+
+            LeafCdxNode currentLeaf = GetLeftmostLeafNode( index );
+            while( true )
+            {
+                foreach( LeafCdxKeyEntry key in currentLeaf.IndexKeys )
+                {
+                    yield return key;
+                }
+
+                if( currentLeaf.RightSibling == BaseCdxNode.NoSibling ) break;
+                
+                currentLeaf = (LeafCdxNode)index.ReadNode( currentLeaf.RightSibling );
+            }
+        }
+
         public static Int32 Count(CdxIndex index)
         {
             if( index == null ) throw new ArgumentNullException(nameof(index));
@@ -16,39 +57,15 @@ namespace Dbf.Cdx
 
             // let's just get the dumb count: the size of an index.
 
-            BaseCdxNode node = index.RootNode;
-            LeafCdxNode leftmostLeafNode = node as LeafCdxNode;
-            if( leftmostLeafNode == null )
-            {
-                while( node != null )
-                {
-                    InteriorCdxNode interiorNode = (InteriorCdxNode)node;
-                    if( interiorNode.KeyEntries.Length == 0 ) return 0;
-
-                    node = index.ReadNode( interiorNode.KeyEntries[0].NodePointer );
-                    leftmostLeafNode = node as LeafCdxNode;
-                    if( leftmostLeafNode != null ) node = null;
-                }
-            }
-
-            // As we always chose the 0th key of an interior-node, the leftmost should have no left sibling:
-            if( leftmostLeafNode.LeftSibling != BaseCdxNode.NoSibling ) throw new CdxException( CdxErrorCode.LeftmostNodeHasLeftSibling );
-
-            LeafCdxNode currentLeaf = leftmostLeafNode;
+            LeafCdxNode currentLeaf = GetLeftmostLeafNode( index );
             Int32 total = 0;
-
             while( true )
             {
                 total += currentLeaf.KeyCount;
 
-                if( currentLeaf.RightSibling == BaseCdxNode.NoSibling )
-                {
-                    break;
-                }
-                else
-                {
-                    currentLeaf = (LeafCdxNode)index.ReadNode( currentLeaf.RightSibling );
-                }
+                if( currentLeaf.RightSibling == BaseCdxNode.NoSibling ) break;
+                
+                currentLeaf = (LeafCdxNode)index.ReadNode( currentLeaf.RightSibling );
             }
 
             return total;

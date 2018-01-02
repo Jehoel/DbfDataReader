@@ -59,19 +59,13 @@ namespace Dbf.Argh
 		private static CdxIndex OpenCdxFileAndPromptUserForCdxIndexTag(String fileName)
 		{
 			CdxFile indexFile = CdxFile.Open( fileName );
-			LeafCdxNode rootNode = (LeafCdxNode)indexFile.RootNode;
 
-			///////////////////////////////////////
-
-			Dictionary<Int32,CdxIndexWithTag> rootNodeHeaders = rootNode
-				.IndexKeys
-				.Select( ik => new { Key = ik, CdxIndex = indexFile.ReadIndex( ik.DbfRecordNumber ) } )
-				.ToDictionary( pair => (Int32)pair.CdxIndex.RootNode.Offset, pair => new CdxIndexWithTag( pair.CdxIndex, pair.Key.StringKey ) );
-
+			IDictionary<String,CdxIndex> taggedIndexes = indexFile.ReadTaggedIndexes();
+			
 			{
 				List<Object[]> output = new List<Object[]>();
 				output.Add( _indexHeaders );
-				output.AddRange( rootNodeHeaders.Select( kvp => DumpIndexObject( indexFile, kvp.Value.TagName, kvp.Value.CdxIndex.RootNode ) ) );
+				output.AddRange( taggedIndexes.Select( kvp => DumpIndexObject( indexFile, kvp.Key, kvp.Value.RootNode ) ) );
 				ConsoleUtility.PrintArray( output );
 			}
 
@@ -79,21 +73,18 @@ namespace Dbf.Argh
 			CdxIndex currentIndex = null;
 			do
 			{
-				Int32 openIndexWithRootNodeAtOffset = ConsoleUtility.ReadUInt32( "Open node at offset? Or 0 to quit. Do not specify an Index Header offset." );
-				if( openIndexWithRootNodeAtOffset == 0 ) return null;
-
-				if( rootNodeHeaders.TryGetValue( openIndexWithRootNodeAtOffset, out CdxIndexWithTag indexWithTag ) )
+				String tagName = ConsoleUtility.ReadLine( "Specify tag name of index to open." );
+				if( taggedIndexes.TryGetValue( tagName, out CdxIndex index ) )
 				{
-					Console.WriteLine("Selected index \"{0}\".", indexWithTag.TagName );
-					currentIndex = indexWithTag.CdxIndex;
+					Console.WriteLine("Selected index \"{0}\".", tagName );
+					currentIndex = index;
 				}
 				else
 				{
 					Console.ForegroundColor = ConsoleColor.Yellow;
-					Console.WriteLine( "Index with root node at offset {0} not found. Please specify a valid root node offset.", openIndexWithRootNodeAtOffset );
+					Console.WriteLine( "Index with tag \"{0}\" not found. Please specify an extant tag name.", tagName );
 					Console.ResetColor();
 				}
-
 			}
 			while( currentIndex == null );
 
