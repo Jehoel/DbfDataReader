@@ -5,15 +5,17 @@ namespace Dbf
     public enum DbfColumnType
     {
         // http://www.dbase.com/Knowledgebase/INT/db7_file_fmt.htm
+        // http://dbfread.readthedocs.io/en/latest/field_types.html
+
         Number         = 'N',
-        SignedLong     = 'I', // 4-bytes
+        SignedLong     = 'I', // 4-bytes, aka "Integer"
         Float          = 'F', // Number stored as a string
         Currency       = 'Y',
         Date           = 'D',
         DateTime       = 'T',
-        Logical        = 'L', // aka Boolean
+        Logical        = 'L', // aka "Boolean"
         Memo           = 'M', // 10-digit memo format
-        DoubleOrBinary = 'B', // Binary in dBase 7: 10-digit memo format, UInt16 in FoxPro
+        B              = 'B', // Binary in dBase 7: 10-digit memo format, UInt16 in FoxPro
         General        = 'G', // aka OLE, 10-digit memo format
         Character      = 'C',
         Double         = 'O', // 8 bytes
@@ -24,7 +26,8 @@ namespace Dbf
         Blob           = 'W',
         Picture        = 'P',
         VarBinary      = 'Q',
-        VarChar        = 'V'
+        VarChar        = 'V',
+        NullFlags      = '0' // Zero. This column stores which other column cells in a row contain null or non-null values.
     }
 
     // Two competing ideas:
@@ -43,6 +46,7 @@ namespace Dbf
         UInt32,
         Int64, // TODO: Is this ever used?
         UInt64,
+        CurrencyInt64,
         /// <summary>Binary data stored inline in the file.</summary>
         ByteArray,
         /// <summary>Binary data stored in a memo file. The inline value will be a block pointer. dBase 7 uses 'B' as the type and stores a 10-digit DBT block number, stored as a string.</summary>
@@ -59,7 +63,9 @@ namespace Dbf
         /// <summary>A date value stored as ASCII text in the form yyMMdd or yyyyMMdd.</summary>
         DateText,
         /// <summary>A date+time value stored as a (UInt32 julianDay, UInt32 timeOfDayMilliseconds) </summary>
-        DateTimeBinaryJulian
+        DateTimeBinaryJulian,
+        /// <summary>Unsure how it works, but seems to be 1 byte long.</summary>
+        NullFlags
     }
 
     public class MemoBlock

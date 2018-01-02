@@ -110,9 +110,32 @@ namespace Dbf
             return await reader.ReadUInt64Async().ConfigureAwait(false);
         }
 
+
+        private static async Task<Decimal?> ReadCurrencyInt64Async(DbfColumn column, AsyncBinaryReader reader)
+        {
+            AssertColumn( column, 8, 4 );
+            Int64 valueInt64 = await reader.ReadInt64Async().ConfigureAwait(false);
+            Decimal valueDec = new Decimal( valueInt64 );
+            valueDec = valueDec / 1000;
+            return valueDec;
+        }
+
+
+        private static async Task<MemoBlock> ReadMemoByteArrayAsync(DbfColumn column, AsyncBinaryReader reader)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        private static async Task<MemoBlock> ReadMemoTextAsync(DbfColumn column, AsyncBinaryReader reader)
+        {
+            throw new NotImplementedException();
+        }
+
+
         private static async Task<Decimal?> ReadNumberTextAsync(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column, expectedDecimalCount: 0 ); // TODO: How is DecimalCount handled for NumberText columns?
+            AssertColumn( column ); // Number columns can have non-zero decimal-count values.
             if( column.Length > 20 ) throw new InvalidOperationException("Number columns cannot exceed 20 characters.");
 
             String value = await ReadAsciiStringAsync( reader, column.Length ).ConfigureAwait(false);
@@ -143,6 +166,15 @@ namespace Dbf
             String trimmed = textStr.TrimEnd( _textPaddingChars );
 
             return trimmed;
+        }
+
+
+        private static async Task<Byte[]> ReadNullFlagsAsync(DbfColumn column, AsyncBinaryReader reader)
+        {
+            AssertColumn( column, expectedLength: 1, expectedDecimalCount: 0 ); // How do these NullFlags columns work? Are they always 1 byte long or more?
+
+            Byte[] nullFlags = await reader.ReadBytesAsync( column.Length ).ConfigureAwait(false);
+            return nullFlags;
         }
 
 
