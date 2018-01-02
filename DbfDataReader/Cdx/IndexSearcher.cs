@@ -14,7 +14,7 @@ namespace Dbf.Cdx
                 while( node != null )
                 {
                     InteriorCdxNode interiorNode = (InteriorCdxNode)node;
-                    if( interiorNode.KeyEntries.Length == 0 ) throw new CdxException( CdxErrorCode.InteriorNodeHasNoKeyEntries );
+                    if( interiorNode.KeyEntries.Count == 0 ) throw new CdxException( CdxErrorCode.InteriorNodeHasNoKeyEntries );
 
                     node = index.ReadNode( interiorNode.KeyEntries[0].NodePointer );
                     leftmostLeafNode = node as LeafCdxNode;
@@ -154,8 +154,8 @@ namespace Dbf.Cdx
         public static IEnumerable<UInt32> SearchLeafNodeAsc(CdxIndex index, LeafCdxNode node, Byte[] targetKey, IComparer<Byte[]> comparer)
         {
             Int32 lastKeyIdx = -1;
-            LeafCdxKeyEntry[] keys = node.IndexKeys;
-            for( Int32 i = 0; i < keys.Length; i++ )
+            IReadOnlyList<LeafCdxKeyEntry> keys = node.IndexKeys;
+            for( Int32 i = 0; i < keys.Count; i++ )
             {
                 LeafCdxKeyEntry key = keys[i];
 
@@ -176,7 +176,7 @@ namespace Dbf.Cdx
                 }
             }
 
-            if( lastKeyIdx == keys.Length - 1 && node.RightSibling != BaseCdxNode.NoSibling )
+            if( lastKeyIdx == keys.Count - 1 && node.RightSibling != BaseCdxNode.NoSibling )
             {
                 // Continue search on the next sibling node.
                 LeafCdxNode rightSibling = (LeafCdxNode)index.ReadNode( node.RightSibling );

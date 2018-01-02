@@ -8,7 +8,9 @@ namespace Dbf.Cdx
     public sealed class InteriorIndexKeyEntry
     {
         private readonly Byte[] keyBytes;
-        //public ReadOnlyCollection<Byte> KeyBytes { get; }
+
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage( "Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays" )]
         public Byte[] KeyBytes => this.keyBytes;
 
         /// <summary>DBF record number for this key (so if it's an exact match there's no need to traverse-down to a Leaf Node).</summary>

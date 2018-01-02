@@ -8,7 +8,7 @@ namespace Dbf
 {
     public interface IDbfTableType
     {
-        DbfActualColumnType GetActualColumnType(DbfColumnType type);
+        DbfActualColumnType GetActualColumnType(DbfColumnType columnType);
 
         DbfMemoFile OpenMemoFile(String tableName);
     }

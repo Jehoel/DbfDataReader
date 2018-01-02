@@ -18,6 +18,7 @@ namespace Dbf.Cdx
             this.TrailingBytes   = trailingBytes;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage( "Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays" )]
         public Byte[] KeyBytes => this.keyBytes;
 
         public  UInt32 DbfRecordNumber   { get; }

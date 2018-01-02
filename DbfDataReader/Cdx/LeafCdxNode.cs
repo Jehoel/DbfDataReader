@@ -12,10 +12,8 @@ namespace Dbf.Cdx
         private const Int32 IndexKeyBufferLength = 488;
 
         /// <summary>Reads a Leaf CDX node from +1 bytes from its start in the file, the first byte is the Node Attributes byte which should be passed-in as a parameter.</summary>
-        public static LeafCdxNode Read(CdxIndexHeader indexHeader, Int64 offset, CdxNodeAttributes attributes, BinaryReader reader)
+        internal static LeafCdxNode Read(CdxIndexHeader indexHeader, Int64 offset, CdxNodeAttributes attributes, BinaryReader reader)
         {
-            if( reader == null ) throw new ArgumentNullException(nameof(reader));
-
             UInt16 keyCount                = reader.ReadUInt16();
             Int32  leftSibling             = reader.ReadInt32();
             Int32  rightSibling            = reader.ReadInt32();
@@ -32,7 +30,7 @@ namespace Dbf.Cdx
 #if DEBUG
             Int64 posActual = reader.BaseStream.Position;
             Int64 posExpected = offset + 512;
-            if( posActual != posExpected ) throw new InvalidOperationException("Didn't read expected number of bytes in CompactIndexExteriorNode.");
+            if( posActual != posExpected ) throw new InvalidOperationException("Didn't read expected number of bytes in " + nameof(LeafCdxNode) + ".");
 #endif
 
             LeafCdxKeyEntry[] entries;
@@ -175,6 +173,6 @@ namespace Dbf.Cdx
         public Byte   TrailCountBitsCount     { get; }
         /// <summary>Number of bytes holding record number, duplicate count and trailing count</summary>
         public Byte   IndexKeyEntryLength     { get; }
-        public LeafCdxKeyEntry[] IndexKeys        { get; }
+        public IReadOnlyList<LeafCdxKeyEntry> IndexKeys { get; }
     }
 }

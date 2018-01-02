@@ -111,19 +111,6 @@ namespace Dbf
             return await reader.ReadUInt64Async().ConfigureAwait(false);
         }
 
-
-        private static Task<MemoBlock> ReadMemoByteArrayAsync(DbfColumn column, AsyncBinaryReader reader)
-        {
-            throw new NotImplementedException();
-        }
-
-
-        private static Task<MemoBlock> ReadMemoTextAsync(DbfColumn column, AsyncBinaryReader reader)
-        {
-            throw new NotImplementedException();
-        }
-
-
         private static async Task<Decimal?> ReadNumberTextAsync(DbfColumn column, AsyncBinaryReader reader)
         {
             AssertColumn( column, expectedDecimalCount: 0 ); // TODO: How is DecimalCount handled for NumberText columns?

@@ -25,7 +25,7 @@ namespace Dbf
 
             switch( column.ActualColumnType )
             {
-                case DbfActualColumnType.BooleanText         : return ReadBooleanText( column, reader );
+                case DbfActualColumnType.BooleanText         : return ReadBooleanText( reader );
                 case DbfActualColumnType.ByteArray           : return ReadByteArray( column, reader );
                 case DbfActualColumnType.DateText            : return ReadDateText( column, reader );
                 case DbfActualColumnType.DateTimeBinaryJulian: return ReadDateTimeBinaryJulian( column, reader );
@@ -37,8 +37,8 @@ namespace Dbf
                 case DbfActualColumnType.UInt16              : return ReadUInt16( column, reader );
                 case DbfActualColumnType.UInt32              : return ReadUInt32( column, reader );
                 case DbfActualColumnType.UInt64              : return ReadUInt64( column, reader );
-                case DbfActualColumnType.MemoByteArray       : return ReadMemoByteArray( column, reader );
-                case DbfActualColumnType.MemoText            : return ReadMemoText( column, reader );
+                case DbfActualColumnType.MemoByteArray       : throw new NotImplementedException();
+                case DbfActualColumnType.MemoText            : throw new NotImplementedException();
                 case DbfActualColumnType.NumberText          : return ReadNumberText( column, reader );
                 case DbfActualColumnType.Text                : return ReadText( column, reader, encoding );
                 case DbfActualColumnType.TextLong            : return ReadTextLong( column, reader, encoding );
@@ -72,8 +72,8 @@ namespace Dbf
                 case DbfActualColumnType.UInt16              : return ReadUInt16Async              ( column, reader           ).ContinueWith( ToObject );
                 case DbfActualColumnType.UInt32              : return ReadUInt32Async              ( column, reader           ).ContinueWith( ToObject );
                 case DbfActualColumnType.UInt64              : return ReadUInt64Async              ( column, reader           ).ContinueWith( ToObject );
-                case DbfActualColumnType.MemoByteArray       : return ReadMemoByteArrayAsync       ( column, reader           ).ContinueWith( ToObject );
-                case DbfActualColumnType.MemoText            : return ReadMemoTextAsync            ( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.MemoByteArray       : throw new NotImplementedException();
+                case DbfActualColumnType.MemoText            : throw new NotImplementedException();
                 case DbfActualColumnType.NumberText          : return ReadNumberTextAsync          ( column, reader           ).ContinueWith( ToObject );
                 case DbfActualColumnType.Text                : return ReadTextAsync                ( column, reader, encoding ).ContinueWith( ToObject );
                 case DbfActualColumnType.TextLong            : return ReadTextLongAsync            ( column, reader, encoding ).ContinueWith( ToObject );
@@ -127,7 +127,7 @@ namespace Dbf
 
         #region Read Sync
 
-        private static Boolean? ReadBooleanText(DbfColumn column, BinaryReader reader)
+        private static Boolean? ReadBooleanText(BinaryReader reader)
         {
             Byte b = reader.ReadByte();
             Char c = (Char)b;
@@ -238,6 +238,7 @@ namespace Dbf
             return reader.ReadUInt64();
         }
 
+/*
         private static MemoBlock ReadMemoByteArray(DbfColumn column, BinaryReader reader)
         {
             throw new NotImplementedException();
@@ -246,7 +247,7 @@ namespace Dbf
         private static MemoBlock ReadMemoText(DbfColumn column, BinaryReader reader)
         {
             throw new NotImplementedException();
-        }
+        }*/
 
         private static Decimal? ReadNumberText(DbfColumn column, BinaryReader reader)
         {

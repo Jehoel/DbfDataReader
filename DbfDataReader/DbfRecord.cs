@@ -182,6 +182,7 @@ namespace Dbf
             return this.values[i];
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage( "Microsoft.Maintainability", "CA1500:VariableNamesShouldNotMatchFieldNames", MessageId = "values" )]
         public override Int32 GetValues(Object[] values)
         {
             if( values == null ) throw new ArgumentNullException(nameof(values));

@@ -12,11 +12,13 @@ namespace Dbf
             return IsMonotonically( source, isIncreasing: true, allowEquals: false );
         }
 
+#if UNUSED
         public static Boolean IsMonotonicallyDecreasing<T>(this IEnumerable<T> source)
             where T : IComparable<T>
         {
             return IsMonotonically( source, isIncreasing: false, allowEquals: false );
         }
+#endif
 
         private static Boolean IsMonotonically<T>(IEnumerable<T> source, Boolean isIncreasing, Boolean allowEquals)
             where T : IComparable<T>
@@ -62,14 +64,10 @@ namespace Dbf
             return true;
         }
 
+#if UNUSED
         public static String FormatInvariant(this String format, params Object[] args)
         {
             return String.Format( CultureInfo.InvariantCulture, format, args );
-        }
-
-        public static String FormatCurrent(this String format, params Object[] args)
-        {
-            return String.Format( CultureInfo.CurrentCulture, format, args );
         }
 
         public static String ToStringInvariant<T>(this T value, String format)
@@ -94,6 +92,12 @@ namespace Dbf
             where T : IConvertible
         {
             return value.ToString( CultureInfo.CurrentCulture );
+        }
+#endif
+
+        public static String FormatCurrent(this String format, params Object[] args)
+        {
+            return String.Format( CultureInfo.CurrentCulture, format, args );
         }
     }
 }

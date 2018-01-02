@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 using Dbf.Cdx;
 
@@ -118,8 +116,6 @@ namespace DbfDataReader.NetFx.Tests
                 .All( keyEntry => keyEntry.StringKey.IndexOf('\0') == -1 );
 
             Assert.True( noNullsInTagNames );
-
-            String x = "foo";
         }
 
         [Fact]
@@ -131,8 +127,6 @@ namespace DbfDataReader.NetFx.Tests
                 .GetFiles("*.cdx")
                 .Select( fi => CdxFile.Open( fi.FullName ) )
                 .ToList();
-
-            String x = "Foo";
         }
     }
 }

@@ -29,7 +29,7 @@ namespace Dbf.Cdx
                 keyCount,
                 leftSibling,
                 rightSibling,
-                keyValues,
+
                 keyEntries
             );
         }
@@ -55,17 +55,13 @@ namespace Dbf.Cdx
             UInt16 keyCount,
             Int32 leftSibling,
             Int32 rightSibling,
-            Byte[] keyValues,
             InteriorIndexKeyEntry[] keyEntries
         )
             : base( offset, indexHeader, attributes, keyCount, leftSibling, rightSibling )
         {
-            this.KeyValues  = keyValues  ?? throw new ArgumentNullException( nameof(keyValues) );
             this.KeyEntries = keyEntries ?? throw new ArgumentNullException( nameof(keyEntries) );
         }
         
-        public Byte[] KeyValues { get; }
-
-        public InteriorIndexKeyEntry[] KeyEntries { get; }
+        public IReadOnlyList<InteriorIndexKeyEntry> KeyEntries { get; }
     }
 }
