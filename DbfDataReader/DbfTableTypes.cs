@@ -98,7 +98,7 @@ namespace Dbf
 
     public class DBase5TableType : DbfTableType
     {
-        public static FoxProTableType Instance { get; } = new FoxProTableType();
+        public static new FoxProTableType Instance { get; } = new FoxProTableType();
 
         public override DbfActualColumnType GetActualColumnType(DbfColumnType columnType)
         {

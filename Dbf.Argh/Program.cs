@@ -155,14 +155,12 @@ namespace Dbf.Argh
 			String tag  = tagName;
 			Object hoff = h.Offset;
 			Object roff = rootNode.Offset;
-			String expr = Encoding.ASCII.GetString( h.KeyExpressionPool, 0, h.KeyExpressionPoolLength );
+			String expr = h.ForExpressionAsString;
 			String ordr = h.Order.ToString();
 			String uniq = h.Options.HasFlag( CdxIndexOptions.Unique ) ? "True" : "False";
 			String type = rootNode is LeafCdxNode ? "Exterior" : "Interior";
 			Object klen = h.KeyLength;
-			String filt = h.Options.HasFlag( CdxIndexOptions.HasForClause ) ?
-				Encoding.ASCII.GetString( h.KeyExpressionPool, h.KeyExpressionPoolLength, h.ForExpressionPoolLength ) :
-				String.Empty;
+			String filt = h.ForExpressionAsString;
 
 			return new Object[] { file, tag, hoff, roff, expr, ordr, uniq, type, klen, filt };
 		}

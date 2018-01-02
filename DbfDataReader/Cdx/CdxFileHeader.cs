@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.IO;
+using System.Text;
 
 namespace Dbf.Cdx
 {
@@ -77,13 +79,26 @@ namespace Dbf.Cdx
             this.KeyLength = keyLength;
             this.Options = options;
             this.Signature = signature;
-            this.Reserved2 = reserved2 ?? throw new ArgumentNullException( nameof( reserved2 ) );
+            this.Reserved2 = Array.AsReadOnly( reserved2 ?? throw new ArgumentNullException( nameof( reserved2 ) ) );
             this.Order = order;
             this.Reserved3 = reserved3;
             this.ForExpressionPoolLength = forExpressionPoolLength;
             this.Reserved4 = reserved4;
             this.KeyExpressionPoolLength = keyExpressionPoolLength;
-            this.KeyExpressionPool = keyExpressionPool;
+            this.KeyExpressionPool = Array.AsReadOnly( keyExpressionPool );
+
+            ///////////////
+
+            this.KeyExpressionAsString = Encoding.ASCII.GetString( keyExpressionPool, 0, keyExpressionPoolLength );
+
+            if( options.HasFlag( CdxIndexOptions.HasForClause ) )
+            {
+                this.ForExpressionAsString = Encoding.ASCII.GetString( keyExpressionPool, keyExpressionPoolLength, forExpressionPoolLength );
+            }
+            else
+            {
+                this.ForExpressionAsString = String.Empty;
+            }
         }
 
         /// <summary>Offset in the index file this header was read at.</summary>
@@ -108,7 +123,7 @@ namespace Dbf.Cdx
         public Byte Signature { get; }
         
         /// <summary>Bytes 16 through 501. Reserved for internal use.</summary>
-        public Byte[] Reserved2 { get; }
+        public ReadOnlyCollection<Byte> Reserved2 { get; }
 
         public CdxIndexOrder Order { get; }
 
@@ -122,6 +137,12 @@ namespace Dbf.Cdx
 
         public UInt16 KeyExpressionPoolLength { get; }
 
-        public Byte[] KeyExpressionPool { get; }
+        public ReadOnlyCollection<Byte> KeyExpressionPool { get; }
+
+        /////////////////////////
+        
+        public String KeyExpressionAsString { get; }
+
+        public String ForExpressionAsString { get; }
     }
 }

@@ -70,7 +70,7 @@ namespace Dbf.Cdx
         public Int32             LeftSibling  { get; } // signed, not unsigned, as '-1' has significance.
         public Int32             RightSibling { get; }
 
-        public abstract IList<IKey> GetKeys();
+        public abstract IReadOnlyList<IKey> GetKeys();
 
         public const Int32 NoSibling = -1;
 

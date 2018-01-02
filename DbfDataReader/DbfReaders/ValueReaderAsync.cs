@@ -112,13 +112,13 @@ namespace Dbf
         }
 
 
-        private static async Task<MemoBlock> ReadMemoByteArrayAsync(DbfColumn column, AsyncBinaryReader reader)
+        private static Task<MemoBlock> ReadMemoByteArrayAsync(DbfColumn column, AsyncBinaryReader reader)
         {
             throw new NotImplementedException();
         }
 
 
-        private static async Task<MemoBlock> ReadMemoTextAsync(DbfColumn column, AsyncBinaryReader reader)
+        private static Task<MemoBlock> ReadMemoTextAsync(DbfColumn column, AsyncBinaryReader reader)
         {
             throw new NotImplementedException();
         }

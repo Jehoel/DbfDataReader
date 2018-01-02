@@ -3,7 +3,7 @@
 namespace Dbf.Cdx
 {
     [Flags]
-    public enum CdxIndexOptions : byte
+    public enum CdxIndexOptions
     {
         None                  =   0,
         Unique                =   1,
@@ -17,14 +17,15 @@ namespace Dbf.Cdx
         All = None | Unique | CustomIndex | HasForClause | BitVector | IsCompactIndex | IsCompoundIndexHeader | IsStructuralIndex
     }
 
-    public enum CdxIndexOrder : ushort
+    public enum CdxIndexOrder
     {
         Ascending  = 0,
         Descending = 1
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage( "Microsoft.Design", "CA1008:EnumsShouldHaveZeroValue" )]
     [Flags]
-    public enum CdxNodeAttributes : ushort
+    public enum CdxNodeAttributes
     {
         /// <summary>Also referred to as "Index page" - though the term could also include leaf nodes.</summary>
         InteriorNode = 0,

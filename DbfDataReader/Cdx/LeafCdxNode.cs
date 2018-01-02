@@ -177,7 +177,7 @@ namespace Dbf.Cdx
         public Byte   IndexKeyEntryLength     { get; }
         public LeafCdxKeyEntry[] IndexKeys        { get; }
 
-        public override IList<IKey> GetKeys()
+        public override IReadOnlyList<IKey> GetKeys()
         {
             return this.IndexKeys;
         }

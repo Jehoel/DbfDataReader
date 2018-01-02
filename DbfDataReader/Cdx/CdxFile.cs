@@ -35,6 +35,7 @@ namespace Dbf.Cdx
         /// <summary>Root node that contains the Compound Index root that indexes the tag-names and point to contained indexes. This is not an actual index of DBF values.</summary>
         public BaseCdxNode RootNode { get; }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage( "Microsoft.Reliability", "CA2000:Dispose objects before losing scope" )]
         public static CdxFile Open(String fileName)
         {
             FileStream fs = new FileStream( fileName, FileMode.Open, FileAccess.Read, FileShare.Read );

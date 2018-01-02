@@ -154,7 +154,7 @@ namespace Dbf.Cdx
         public static IEnumerable<UInt32> SearchLeafNodeAsc(CdxIndex index, LeafCdxNode node, Byte[] targetKey, IComparer<Byte[]> comparer)
         {
             Int32 lastKeyIdx = -1;
-            IList<IKey> keys = node.GetKeys();
+            IReadOnlyList<IKey> keys = node.GetKeys();
             for( Int32 i = 0; i < keys.Count; i++ )
             {
                 IKey key = keys[i];
@@ -189,6 +189,10 @@ namespace Dbf.Cdx
         // There is no built-in BinarySearch for IList<T>, surprisingly.
         public static Int32 BinarySearch(IList<IKey> list, Byte[] target, IComparer<Byte[]> comparer, Boolean isInAscendingOrder)
         {
+            if( list == null ) throw new ArgumentNullException(nameof(list));
+            if( target == null ) throw new ArgumentNullException(nameof(target));
+            if( comparer == null ) throw new ArgumentNullException(nameof(comparer));
+
             Int32 lower = 0;
             Int32 upper = list.Count - 1;
 
@@ -240,6 +244,8 @@ namespace Dbf.Cdx
             return 0;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage( "Microsoft.Design", "CA1062:Validate arguments of public methods", MessageId = "0" )]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage( "Microsoft.Design", "CA1062:Validate arguments of public methods", MessageId = "1" )]
         public static Int32 CompareWithoutChecks(Byte[] x, Byte[] y)
         {
             for( Int32 i = 0; i < x.Length; i++ )

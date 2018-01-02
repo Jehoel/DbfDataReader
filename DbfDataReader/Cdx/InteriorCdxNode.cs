@@ -68,7 +68,7 @@ namespace Dbf.Cdx
 
         public InteriorIndexKeyEntry[] KeyEntries { get; }
 
-        public override IList<IKey> GetKeys()
+        public override IReadOnlyList<IKey> GetKeys()
         {
             return this.KeyEntries;
         }
