@@ -95,15 +95,14 @@ namespace Dbf
 
     internal class DecoderNlsHelper
     {
-        private readonly Decoder decoder;
         private readonly DotNetInternals.DecoderNls_HasState hasStateDelegate;
 
         internal DecoderNlsHelper(Decoder decoder)
         {
-            this.decoder          = decoder;
             this.hasStateDelegate = DotNetInternals.Create_DecoderNls_HasState( decoder );
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage( "Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode" )]
         public Boolean IsDecoderNls => this.hasStateDelegate != null;
 
         public Boolean HasState => this.hasStateDelegate?.Invoke() ?? false;

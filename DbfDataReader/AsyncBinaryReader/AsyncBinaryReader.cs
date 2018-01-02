@@ -5,10 +5,12 @@ using System.IO;
 using System.Globalization;
 using System.Diagnostics.Contracts;
 using System.Security;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace Dbf
 {
-    class __Error
+    internal static class __Error
     {
         public static Exception FileNotOpen()
         {
@@ -20,19 +22,19 @@ namespace Dbf
             throw new NotImplementedException();
         }
     }
-    class Environment
+    internal static class Environment
     {
         public static String GetResourceString(String name)
         {
             return name;
         }
-        public static String GetResourceString(String name, Int32 length)
+        public static String GetResourceString(String name, Int32 arg0)
         {
-            return name;
+            return name + " " + arg0.ToString( CultureInfo.InvariantCulture );
         }
     }
 
-    public sealed class TodoAsyncBinaryReader : IDisposable
+    public sealed class AsyncBinaryReader : IDisposable
     {
         private const int MaxCharBytesSize = 128;
 
@@ -43,22 +45,22 @@ namespace Dbf
         private          byte[]   charBytes;
         private          char[]   singleChar;
         private          char[]   charBuffer;
+        private readonly Byte[]   singleByteBuffer = new Byte[1];
         private readonly int      maxCharsSize;  // From MaxCharBytesSize & Encoding
 
         // Performance optimization for Read() w/ Unicode.  Speeds us up by ~40% 
         private readonly bool     is2BytesPerChar;
-        private readonly bool     isMemoryStream; // "do we sit on MemoryStream?" for Read/ReadInt32 perf
         private readonly bool     leaveOpen;
 
-        public TodoAsyncBinaryReader(Stream input) : this( input, new UTF8Encoding(), false )
+        public AsyncBinaryReader(Stream input) : this( input, new UTF8Encoding(), false )
         {
         }
 
-        public TodoAsyncBinaryReader(Stream input, Encoding encoding) : this( input, encoding, false )
+        public AsyncBinaryReader(Stream input, Encoding encoding) : this( input, encoding, false )
         {
         }
 
-        public TodoAsyncBinaryReader(Stream input, Encoding encoding, bool leaveOpen)
+        public AsyncBinaryReader(Stream input, Encoding encoding, bool leaveOpen)
         {
             if( input == null )
             {
@@ -106,7 +108,7 @@ namespace Dbf
             }
         }
 
-        public int PeekChar()
+        public async Task<Int32> PeekCharAsync()
         {
             Contract.Ensures( Contract.Result<int>() >= -1 );
 
@@ -115,12 +117,12 @@ namespace Dbf
             if( !this.stream.CanSeek )
                 return -1;
             long origPos = this.stream.Position;
-            int ch = Read();
+            int ch = await ReadAsync().ConfigureAwait(false);
             this.stream.Position = origPos;
             return ch;
         }
 
-        public int Read()
+        public Task<Int32> ReadAsync()
         {
             Contract.Ensures( Contract.Result<int>() >= -1 );
 
@@ -128,36 +130,36 @@ namespace Dbf
             {
                 __Error.FileNotOpen();
             }
-            return InternalReadOneChar();
+            return InternalReadOneCharAsync();
         }
 
-        public bool ReadBoolean()
+        public async Task<Boolean> ReadBooleanAsync()
         {
-            FillBuffer( 1 );
+            await FillBufferAsync( 1 ).ConfigureAwait(false);
             return ( this.buffer[0] != 0 );
         }
 
-        public byte ReadByte()
+        public async Task<Byte> ReadByteAsync()
         {
             // Inlined to avoid some method call overhead with FillBuffer.
             if( this.stream == null ) __Error.FileNotOpen();
 
-            int b = this.stream.ReadByte();
-            if( b == -1 )
-                __Error.EndOfFile();
+            int b = await this.StreamReadByteAsync(CancellationToken.None).ConfigureAwait(false);
+            if( b == -1 ) __Error.EndOfFile();
+                
             return (byte)b;
         }
 
         [CLSCompliant( false )]
-        public sbyte ReadSByte()
+        public async Task<SByte> ReadSByteAsync()
         {
-            FillBuffer( 1 );
+            await FillBufferAsync( 1 ).ConfigureAwait(false);
             return (sbyte)( this.buffer[0] );
         }
 
-        public char ReadChar()
+        public async Task<Char> ReadCharAsync()
         {
-            int value = Read();
+            int value = await this.ReadAsync().ConfigureAwait(false);
             if( value == -1 )
             {
                 __Error.EndOfFile();
@@ -165,61 +167,46 @@ namespace Dbf
             return (char)value;
         }
 
-        public short ReadInt16()
+        public async Task<Int16> ReadInt16Async()
         {
-            FillBuffer( 2 );
+            await FillBufferAsync( 2 ).ConfigureAwait(false);
             return (short)( this.buffer[0] | this.buffer[1] << 8 );
         }
 
         [CLSCompliant( false )]
-        public ushort ReadUInt16()
+        public async Task<UInt16> ReadUInt16Async()
         {
-            FillBuffer( 2 );
+            await FillBufferAsync( 2 ).ConfigureAwait(false);
             return (ushort)( this.buffer[0] | this.buffer[1] << 8 );
         }
 
-        public int ReadInt32()
+        public async Task<Int32> ReadInt32Async()
         {
-            //            if (this.isMemoryStream) {
-            //                if (this.stream==null) __Error.FileNotOpen();
-            //                // read directly from MemoryStream buffer
-            //                MemoryStream mStream = this.stream as MemoryStream;
-            //                Contract.Assert(mStream != null, "this.stream as MemoryStream != null");
-            //
-            //                return mStream.InternalReadInt32();
-            //            }
-            //            else
-            //            {
-            FillBuffer( 4 );
+            await FillBufferAsync( 4 ).ConfigureAwait(false);
             return (int)( this.buffer[0] | this.buffer[1] << 8 | this.buffer[2] << 16 | this.buffer[3] << 24 );
-            //            }
         }
 
         [CLSCompliant( false )]
-        public uint ReadUInt32()
+        public async Task<UInt32> ReadUInt32Async()
         {
-            FillBuffer( 4 );
+            await FillBufferAsync( 4 ).ConfigureAwait(false);
             return (uint)( this.buffer[0] | this.buffer[1] << 8 | this.buffer[2] << 16 | this.buffer[3] << 24 );
         }
 
-        public long ReadInt64()
+        public async Task<Int64> ReadInt64Async()
         {
-            FillBuffer( 8 );
-            uint lo = (uint)(this.buffer[0] | this.buffer[1] << 8 |
-                             this.buffer[2] << 16 | this.buffer[3] << 24);
-            uint hi = (uint)(this.buffer[4] | this.buffer[5] << 8 |
-                             this.buffer[6] << 16 | this.buffer[7] << 24);
+            await FillBufferAsync( 8 ).ConfigureAwait(false);
+            uint lo = (uint)(this.buffer[0] | this.buffer[1] << 8 | this.buffer[2] << 16 | this.buffer[3] << 24);
+            uint hi = (uint)(this.buffer[4] | this.buffer[5] << 8 | this.buffer[6] << 16 | this.buffer[7] << 24);
             return (long)( (ulong)hi ) << 32 | lo;
         }
 
         [CLSCompliant( false )]
-        public ulong ReadUInt64()
+        public async Task<UInt64> ReadUInt64Async()
         {
-            FillBuffer( 8 );
-            uint lo = (uint)(this.buffer[0] | this.buffer[1] << 8 |
-                             this.buffer[2] << 16 | this.buffer[3] << 24);
-            uint hi = (uint)(this.buffer[4] | this.buffer[5] << 8 |
-                             this.buffer[6] << 16 | this.buffer[7] << 24);
+            await FillBufferAsync( 8 ).ConfigureAwait(false);
+            uint lo = (uint)(this.buffer[0] | this.buffer[1] << 8 | this.buffer[2] << 16 | this.buffer[3] << 24);
+            uint hi = (uint)(this.buffer[4] | this.buffer[5] << 8 | this.buffer[6] << 16 | this.buffer[7] << 24);
             return ( (ulong)hi ) << 32 | lo;
         }
 
@@ -244,9 +231,9 @@ namespace Dbf
         }
 #endif
 
-        public decimal ReadDecimal()
+        public async Task<Decimal> ReadDecimalAsync()
         {
-            FillBuffer( 16 );
+            await FillBufferAsync( 16 ).ConfigureAwait(false);
             try
             {
                 return DotNetInternals.Decimal_ToDecimal( this.buffer ); // Decimal.ToDecimal(this.buffer);
@@ -258,7 +245,7 @@ namespace Dbf
             }
         }
 
-        public String ReadString()
+        public async Task<String> ReadStringAsync()
         {
             Contract.Ensures( Contract.Result<String>() != null );
 
@@ -272,7 +259,7 @@ namespace Dbf
             int charsRead;
 
             // Length of the string in bytes, not chars
-            stringLength = Read7BitEncodedInt();
+            stringLength = await this.Read7BitEncodedIntAsync().ConfigureAwait(false);
             if( stringLength < 0 )
             {
                 throw new IOException( Environment.GetResourceString( "IO.IO_InvalidStringLen_Len", stringLength ) );
@@ -298,7 +285,7 @@ namespace Dbf
             {
                 readLength = ( ( stringLength - currPos ) > MaxCharBytesSize ) ? MaxCharBytesSize : ( stringLength - currPos );
 
-                n = this.stream.Read( this.charBytes, 0, readLength );
+                n = await this.stream.ReadAsync( this.charBytes, 0, readLength ).ConfigureAwait(false);
                 if( n == 0 )
                 {
                     __Error.EndOfFile();
@@ -318,8 +305,8 @@ namespace Dbf
             return sb.ToString();
         }
 
-        [SecuritySafeCritical]
-        public int Read(char[] buffer, int index, int count)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage( "Microsoft.Maintainability", "CA1500:VariableNamesShouldNotMatchFieldNames", MessageId = "buffer" )]
+        public Task<Int32> ReadAsync(char[] buffer, int index, int count)
         {
             if( buffer == null )
             {
@@ -345,13 +332,11 @@ namespace Dbf
                 __Error.FileNotOpen();
 
             // SafeCritical: index and count have already been verified to be a valid range for the buffer
-            return InternalReadChars( buffer, index, count );
+            return InternalReadCharsAsync( buffer, index, count );
         }
 
-
-
-        [SecurityCritical]
-        private int InternalReadChars(char[] buffer, int index, int count)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage( "Microsoft.Maintainability", "CA1500:VariableNamesShouldNotMatchFieldNames", MessageId = "buffer" )]
+        private async Task<Int32> InternalReadCharsAsync(char[] buffer, int index, int count)
         {
             Contract.Requires( buffer != null );
             Contract.Requires( index >= 0 && count >= 0 );
@@ -388,20 +373,20 @@ namespace Dbf
 
                 int position = 0;
                 byte[] byteBuffer = null;
-                //              if (this.isMemoryStream)
-                //              {
-                //                  MemoryStream mStream = this.stream as MemoryStream;
-                //                  Contract.Assert(mStream != null, "this.stream as MemoryStream != null");
+//              if (this.isMemoryStream)
+//              {
+//                  MemoryStream mStream = this.stream as MemoryStream;
+//                  Contract.Assert(mStream != null, "this.stream as MemoryStream != null");
 
-                //                  position = mStream.InternalGetPosition();
-                //                  numBytes = mStream.InternalEmulateRead(numBytes);
-                //                  byteBuffer = mStream.InternalGetBuffer();
-                //              }
-                //              else
-                //              {
-                numBytes = this.stream.Read( this.charBytes, 0, numBytes );
+//                  position = mStream.InternalGetPosition();
+//                  numBytes = mStream.InternalEmulateRead(numBytes);
+//                  byteBuffer = mStream.InternalGetBuffer();
+//              }
+//              else
+//              {
+                numBytes = await this.stream.ReadAsync( this.charBytes, 0, numBytes ).ConfigureAwait(false);
                 byteBuffer = this.charBytes;
-                //              }
+//              }
 
                 if( numBytes == 0 )
                 {
@@ -462,7 +447,7 @@ namespace Dbf
             return ( count - charsRemaining );
         }
 
-        private int InternalReadOneChar()
+        private async Task<Int32> InternalReadOneCharAsync()
         {
             // I know having a separate InternalReadOneChar method seems a little 
             // redundant, but this makes a scenario like the security parser code
@@ -472,17 +457,9 @@ namespace Dbf
             int numBytes = 0;
             long posSav = posSav = 0;
 
-            if( this.stream.CanSeek )
-                posSav = this.stream.Position;
-
-            if( this.charBytes == null )
-            {
-                this.charBytes = new byte[MaxCharBytesSize]; //
-            }
-            if( this.singleChar == null )
-            {
-                this.singleChar = new char[1];
-            }
+            if( this.stream.CanSeek ) posSav = this.stream.Position;
+            if( this.charBytes == null ) this.charBytes = new byte[MaxCharBytesSize];
+            if( this.singleChar == null ) this.singleChar = new char[1];
 
             while( charsRead == 0 )
             {
@@ -492,13 +469,13 @@ namespace Dbf
                 // Assume 1 byte can be 1 char unless this.2BytesPerChar is true.
                 numBytes = this.is2BytesPerChar ? 2 : 1;
 
-                int r = this.stream.ReadByte();
+                int r = await this.StreamReadByteAsync(CancellationToken.None).ConfigureAwait(false);
                 this.charBytes[0] = (byte)r;
-                if( r == -1 )
-                    numBytes = 0;
+                if( r == -1 ) numBytes = 0;
+                    
                 if( numBytes == 2 )
                 {
-                    r = this.stream.ReadByte();
+                    r = await this.StreamReadByteAsync(CancellationToken.None).ConfigureAwait(false);
                     this.charBytes[1] = (byte)r;
                     if( r == -1 )
                         numBytes = 1;
@@ -506,7 +483,6 @@ namespace Dbf
 
                 if( numBytes == 0 )
                 {
-                    // Console.WriteLine("Found no bytes.  We're outta here.");
                     return -1;
                 }
 
@@ -514,13 +490,11 @@ namespace Dbf
 
                 try
                 {
-
                     charsRead = this.decoder.GetChars( this.charBytes, 0, numBytes, this.singleChar, 0 );
                 }
                 catch
                 {
                     // Handle surrogate char 
-
                     if( this.stream.CanSeek )
                         this.stream.Seek( ( posSav - this.stream.Position ), SeekOrigin.Current );
                     // else - we can't do much here
@@ -531,15 +505,15 @@ namespace Dbf
                 Contract.Assert( charsRead < 2, "InternalReadOneChar - assuming we only got 0 or 1 char, not 2!" );
                 //                Console.WriteLine("That became: " + charsRead + " characters.");
             }
-            if( charsRead == 0 )
-                return -1;
+            
+            if( charsRead == 0 ) return -1;
+            
             return this.singleChar[0];
         }
 
         private static readonly Char[] _emptyCharArray = new Char[0];
 
-        [SecuritySafeCritical]
-        public char[] ReadChars(int count)
+        public async Task<Char[]> ReadCharsAsync(int count)
         {
             if( count < 0 )
             {
@@ -560,7 +534,7 @@ namespace Dbf
 
             // SafeCritical: we own the chars buffer, and therefore can guarantee that the index and count are valid
             char[] chars = new char[count];
-            int n = InternalReadChars(chars, 0, count);
+            int n = await InternalReadCharsAsync(chars, 0, count).ConfigureAwait(false);
             if( n != count )
             {
                 char[] copy = new char[n];
@@ -571,7 +545,8 @@ namespace Dbf
             return chars;
         }
 
-        public int Read(byte[] buffer, int index, int count)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage( "Microsoft.Maintainability", "CA1500:VariableNamesShouldNotMatchFieldNames", MessageId = "buffer" )]
+        public Task<Int32> ReadAsync(byte[] buffer, int index, int count)
         {
             if( buffer == null )
                 throw new ArgumentNullException( "buffer", Environment.GetResourceString( "ArgumentNull_Buffer" ) );
@@ -586,12 +561,12 @@ namespace Dbf
             Contract.EndContractBlock();
 
             if( this.stream == null ) __Error.FileNotOpen();
-            return this.stream.Read( buffer, index, count );
+            return this.stream.ReadAsync( buffer, index, count );
         }
 
         private static readonly Byte[] _emptyByteArray = new Byte[0];
 
-        public byte[] ReadBytes(int count)
+        public async Task<Byte[]> ReadBytesAsync(int count)
         {
             if( count < 0 ) throw new ArgumentOutOfRangeException( "count", Environment.GetResourceString( "ArgumentOutOfRange_NeedNonNegNum" ) );
             Contract.Ensures( Contract.Result<byte[]>() != null );
@@ -609,7 +584,7 @@ namespace Dbf
             int numRead = 0;
             do
             {
-                int n = this.stream.Read(result, numRead, count);
+                int n = await this.stream.ReadAsync(result, numRead, count).ConfigureAwait(false);
                 if( n == 0 )
                     break;
                 numRead += n;
@@ -627,7 +602,7 @@ namespace Dbf
             return result;
         }
 
-        private void FillBuffer(int numBytes)
+        private async Task FillBufferAsync(int numBytes)
         {
             if( this.buffer != null && ( numBytes < 0 || numBytes > this.buffer.Length ) )
             {
@@ -643,7 +618,7 @@ namespace Dbf
             // streams.
             if( numBytes == 1 )
             {
-                n = this.stream.ReadByte();
+                n = await this.StreamReadByteAsync(CancellationToken.None).ConfigureAwait(false);
                 if( n == -1 )
                     __Error.EndOfFile();
                 this.buffer[0] = (byte)n;
@@ -652,7 +627,7 @@ namespace Dbf
 
             do
             {
-                n = this.stream.Read( this.buffer, bytesRead, numBytes - bytesRead );
+                n = await this.stream.ReadAsync( this.buffer, bytesRead, numBytes - bytesRead ).ConfigureAwait(false);
                 if( n == 0 )
                 {
                     __Error.EndOfFile();
@@ -661,7 +636,7 @@ namespace Dbf
             } while( bytesRead < numBytes );
         }
 
-        private int Read7BitEncodedInt()
+        private async Task<Int32> Read7BitEncodedIntAsync()
         {
             // Read out an Int32 7 bits at a time.  The high bit
             // of the byte when on means to continue reading more bytes.
@@ -676,11 +651,23 @@ namespace Dbf
                     throw new FormatException( Environment.GetResourceString( "Format_Bad7BitInt32" ) );
 
                 // ReadByte handles end of stream cases for us.
-                b = ReadByte();
+                b = await this.ReadByteAsync().ConfigureAwait(false);
                 count |= ( b & 0x7F ) << shift;
                 shift += 7;
             } while( ( b & 0x80 ) != 0 );
             return count;
+        }
+
+        private async Task<Int32> StreamReadByteAsync(CancellationToken ct)
+        {
+            Int32 r = await this.stream.ReadAsync( this.singleByteBuffer, 0, 1, ct ).ConfigureAwait(false);
+            switch( r )
+            {
+                case 0: return -1;
+                case 1: return this.singleByteBuffer[0];
+                default:
+                    throw new InvalidOperationException("Didn't read 0 or 1 bytes from stream. Read " + r + " bytes.");
+            }
         }
     }
 }
