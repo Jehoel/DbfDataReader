@@ -221,13 +221,23 @@ namespace Dbf
         [System.Security.SecuritySafeCritical]  // auto-generated
         public unsafe double ReadDouble() {
             FillBuffer(8);
-            uint lo = (uint)(this.buffer[0] | this.buffer[1] << 8 |
-                this.buffer[2] << 16 | this.buffer[3] << 24);
-            uint hi = (uint)(this.buffer[4] | this.buffer[5] << 8 |
-                this.buffer[6] << 16 | this.buffer[7] << 24);
+            uint lo = (uint)(this.buffer[0] | this.buffer[1] << 8 | this.buffer[2] << 16 | this.buffer[3] << 24);
+            uint hi = (uint)(this.buffer[4] | this.buffer[5] << 8 | this.buffer[6] << 16 | this.buffer[7] << 24);
 
             ulong tmpBuffer = ((ulong)hi) << 32 | lo;
             return *((double*)&tmpBuffer);
+        }
+#else
+        public async Task<Single> ReadSingleAsync()
+        {
+            await FillBufferAsync(4).ConfigureAwait(false);
+            return BitConverter.ToSingle( this.buffer, 0 );
+        }
+
+        public async Task<Double> ReadDoubleAsync()
+        {
+            await FillBufferAsync(8).ConfigureAwait(false);
+            return BitConverter.ToDouble( this.buffer, 0 );
         }
 #endif
 
