@@ -32,23 +32,23 @@ namespace Dbf
         }
     }
 
-    public class TodoAsyncBinaryReader : IDisposable
+    public sealed class TodoAsyncBinaryReader : IDisposable
     {
         private const int MaxCharBytesSize = 128;
 
-        private Stream   stream;
-        private byte[]   buffer;
-        private Decoder  decoder;
-        private DecoderNlsHelper decoderNls;
-        private byte[]   charBytes;
-        private char[]   singleChar;
-        private char[]   charBuffer;
-        private int      maxCharsSize;  // From MaxCharBytesSize & Encoding
+        private readonly Stream   stream;
+        private readonly byte[]   buffer;
+        private readonly Decoder  decoder;
+        private readonly DecoderNlsHelper decoderNls;
+        private          byte[]   charBytes;
+        private          char[]   singleChar;
+        private          char[]   charBuffer;
+        private readonly int      maxCharsSize;  // From MaxCharBytesSize & Encoding
 
         // Performance optimization for Read() w/ Unicode.  Speeds us up by ~40% 
-        private bool     is2BytesPerChar;
-        private bool     isMemoryStream; // "do we sit on MemoryStream?" for Read/ReadInt32 perf
-        private bool     leaveOpen;
+        private readonly bool     is2BytesPerChar;
+        private readonly bool     isMemoryStream; // "do we sit on MemoryStream?" for Read/ReadInt32 perf
+        private readonly bool     leaveOpen;
 
         public TodoAsyncBinaryReader(Stream input) : this( input, new UTF8Encoding(), false )
         {
@@ -71,6 +71,7 @@ namespace Dbf
             if( !input.CanRead )
                 throw new ArgumentException( Environment.GetResourceString( "Argument_StreamNotReadable" ) );
             Contract.EndContractBlock();
+            
             this.stream = input;
             this.decoder = encoding.GetDecoder();
             this.decoderNls = new DecoderNlsHelper( this.decoder );
@@ -84,15 +85,12 @@ namespace Dbf
             // For Encodings that always use 2 bytes per char (or more), 
             // special case them here to make Read() & Peek() faster.
             this.is2BytesPerChar = encoding is UnicodeEncoding;
-            // check if BinaryReader is based on MemoryStream, and keep this for it's life
-            // we cannot use "as" operator, since derived classes are not allowed
-            this.isMemoryStream = ( this.stream.GetType() == typeof( MemoryStream ) );
             this.leaveOpen = leaveOpen;
 
             Contract.Assert( this.decoder != null, "[BinaryReader.ctor]this.decoder!=null" );
         }
 
-        public virtual Stream BaseStream
+        public Stream BaseStream
         {
             get
             {
@@ -100,34 +98,15 @@ namespace Dbf
             }
         }
 
-        public virtual void Close()
-        {
-            Dispose( true );
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if( disposing )
-            {
-                Stream copyOfStream = this.stream;
-                this.stream = null;
-                if( copyOfStream != null && !this.leaveOpen )
-                    copyOfStream.Close();
-            }
-            this.stream = null;
-            this.buffer = null;
-            this.decoder = null;
-            this.charBytes = null;
-            this.singleChar = null;
-            this.charBuffer = null;
-        }
-
         public void Dispose()
         {
-            Dispose( true );
+            if( !this.leaveOpen )
+            {
+                this.stream.Dispose();
+            }
         }
 
-        public virtual int PeekChar()
+        public int PeekChar()
         {
             Contract.Ensures( Contract.Result<int>() >= -1 );
 
@@ -141,7 +120,7 @@ namespace Dbf
             return ch;
         }
 
-        public virtual int Read()
+        public int Read()
         {
             Contract.Ensures( Contract.Result<int>() >= -1 );
 
@@ -152,13 +131,13 @@ namespace Dbf
             return InternalReadOneChar();
         }
 
-        public virtual bool ReadBoolean()
+        public bool ReadBoolean()
         {
             FillBuffer( 1 );
             return ( this.buffer[0] != 0 );
         }
 
-        public virtual byte ReadByte()
+        public byte ReadByte()
         {
             // Inlined to avoid some method call overhead with FillBuffer.
             if( this.stream == null ) __Error.FileNotOpen();
@@ -170,13 +149,13 @@ namespace Dbf
         }
 
         [CLSCompliant( false )]
-        public virtual sbyte ReadSByte()
+        public sbyte ReadSByte()
         {
             FillBuffer( 1 );
             return (sbyte)( this.buffer[0] );
         }
 
-        public virtual char ReadChar()
+        public char ReadChar()
         {
             int value = Read();
             if( value == -1 )
@@ -186,20 +165,20 @@ namespace Dbf
             return (char)value;
         }
 
-        public virtual short ReadInt16()
+        public short ReadInt16()
         {
             FillBuffer( 2 );
             return (short)( this.buffer[0] | this.buffer[1] << 8 );
         }
 
         [CLSCompliant( false )]
-        public virtual ushort ReadUInt16()
+        public ushort ReadUInt16()
         {
             FillBuffer( 2 );
             return (ushort)( this.buffer[0] | this.buffer[1] << 8 );
         }
 
-        public virtual int ReadInt32()
+        public int ReadInt32()
         {
             //            if (this.isMemoryStream) {
             //                if (this.stream==null) __Error.FileNotOpen();
@@ -217,13 +196,13 @@ namespace Dbf
         }
 
         [CLSCompliant( false )]
-        public virtual uint ReadUInt32()
+        public uint ReadUInt32()
         {
             FillBuffer( 4 );
             return (uint)( this.buffer[0] | this.buffer[1] << 8 | this.buffer[2] << 16 | this.buffer[3] << 24 );
         }
 
-        public virtual long ReadInt64()
+        public long ReadInt64()
         {
             FillBuffer( 8 );
             uint lo = (uint)(this.buffer[0] | this.buffer[1] << 8 |
@@ -234,7 +213,7 @@ namespace Dbf
         }
 
         [CLSCompliant( false )]
-        public virtual ulong ReadUInt64()
+        public ulong ReadUInt64()
         {
             FillBuffer( 8 );
             uint lo = (uint)(this.buffer[0] | this.buffer[1] << 8 |
@@ -246,14 +225,14 @@ namespace Dbf
 
 #if UNSAFE
         [System.Security.SecuritySafeCritical]  // auto-generated
-        public virtual unsafe float ReadSingle() {
+        public unsafe float ReadSingle() {
             FillBuffer(4);
             uint tmpBuffer = (uint)(this.buffer[0] | this.buffer[1] << 8 | this.buffer[2] << 16 | this.buffer[3] << 24);
             return *((float*)&tmpBuffer);
         }
 
         [System.Security.SecuritySafeCritical]  // auto-generated
-        public virtual unsafe double ReadDouble() {
+        public unsafe double ReadDouble() {
             FillBuffer(8);
             uint lo = (uint)(this.buffer[0] | this.buffer[1] << 8 |
                 this.buffer[2] << 16 | this.buffer[3] << 24);
@@ -265,7 +244,7 @@ namespace Dbf
         }
 #endif
 
-        public virtual decimal ReadDecimal()
+        public decimal ReadDecimal()
         {
             FillBuffer( 16 );
             try
@@ -279,7 +258,7 @@ namespace Dbf
             }
         }
 
-        public virtual String ReadString()
+        public String ReadString()
         {
             Contract.Ensures( Contract.Result<String>() != null );
 
@@ -340,7 +319,7 @@ namespace Dbf
         }
 
         [SecuritySafeCritical]
-        public virtual int Read(char[] buffer, int index, int count)
+        public int Read(char[] buffer, int index, int count)
         {
             if( buffer == null )
             {
@@ -560,7 +539,7 @@ namespace Dbf
         private static readonly Char[] _emptyCharArray = new Char[0];
 
         [SecuritySafeCritical]
-        public virtual char[] ReadChars(int count)
+        public char[] ReadChars(int count)
         {
             if( count < 0 )
             {
@@ -592,7 +571,7 @@ namespace Dbf
             return chars;
         }
 
-        public virtual int Read(byte[] buffer, int index, int count)
+        public int Read(byte[] buffer, int index, int count)
         {
             if( buffer == null )
                 throw new ArgumentNullException( "buffer", Environment.GetResourceString( "ArgumentNull_Buffer" ) );
@@ -612,7 +591,7 @@ namespace Dbf
 
         private static readonly Byte[] _emptyByteArray = new Byte[0];
 
-        public virtual byte[] ReadBytes(int count)
+        public byte[] ReadBytes(int count)
         {
             if( count < 0 ) throw new ArgumentOutOfRangeException( "count", Environment.GetResourceString( "ArgumentOutOfRange_NeedNonNegNum" ) );
             Contract.Ensures( Contract.Result<byte[]>() != null );
@@ -648,7 +627,7 @@ namespace Dbf
             return result;
         }
 
-        protected virtual void FillBuffer(int numBytes)
+        private void FillBuffer(int numBytes)
         {
             if( this.buffer != null && ( numBytes < 0 || numBytes > this.buffer.Length ) )
             {
@@ -682,7 +661,7 @@ namespace Dbf
             } while( bytesRead < numBytes );
         }
 
-        internal protected int Read7BitEncodedInt()
+        private int Read7BitEncodedInt()
         {
             // Read out an Int32 7 bits at a time.  The high bit
             // of the byte when on means to continue reading more bytes.
