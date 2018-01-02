@@ -51,7 +51,23 @@ namespace Dbf.Cdx
             );
         }
 
-        private CdxIndexHeader(Int64 offset, UInt32 rootNodePointer, Int32 freeNodeListPointer, UInt32 reserved1, UInt16 keyLength, CdxIndexOptions options, Byte signature, Byte[] reserved2, CdxIndexOrder order, UInt16 reserved3, UInt16 forExpressionPoolLength, UInt16 reserved4, UInt16 keyExpressionPoolLength, Byte[] keyExpressionPool)
+        private CdxIndexHeader(
+            Int64 offset,
+
+            UInt32 rootNodePointer,
+            Int32 freeNodeListPointer,
+            UInt32 reserved1,
+            UInt16 keyLength,
+            CdxIndexOptions options,
+            Byte signature,
+            Byte[] reserved2,
+            CdxIndexOrder order,
+            UInt16 reserved3,
+            UInt16 forExpressionPoolLength,
+            UInt16 reserved4,
+            UInt16 keyExpressionPoolLength,
+            Byte[] keyExpressionPool
+        )
         {
             this.Offset = offset;
 

@@ -80,7 +80,7 @@ namespace Dbf.Cdx
         {
             if( packed == null ) throw new ArgumentNullException(nameof(packed));
             if( packed.Length != IndexKeyBufferLength /* 488 */ ) throw new ArgumentException("Value must have a length of 488.", nameof(packed));
-            if( packedKeyEntryLength < 2 ) throw new ArgumentException("Packed Key Entries must be at least 2 bytes long.");
+            if( packedKeyEntryLength > 8 ) throw new ArgumentException("Packed Key Entry lengths must be 8 bytes or shorter.");
 
             List<LeafCdxKeyEntryData> temp = new List<LeafCdxKeyEntryData>();
 
