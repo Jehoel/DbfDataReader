@@ -154,10 +154,10 @@ namespace Dbf.Cdx
         public static IEnumerable<UInt32> SearchLeafNodeAsc(CdxIndex index, LeafCdxNode node, Byte[] targetKey, IComparer<Byte[]> comparer)
         {
             Int32 lastKeyIdx = -1;
-            IReadOnlyList<IKey> keys = node.GetKeys();
-            for( Int32 i = 0; i < keys.Count; i++ )
+            LeafCdxKeyEntry[] keys = node.IndexKeys;
+            for( Int32 i = 0; i < keys.Length; i++ )
             {
-                IKey key = keys[i];
+                LeafCdxKeyEntry key = keys[i];
 
                 Int32 cmp = comparer.Compare( key.KeyBytes, targetKey );
                 if( cmp < 0 )
@@ -176,7 +176,7 @@ namespace Dbf.Cdx
                 }
             }
 
-            if( lastKeyIdx == keys.Count - 1 && node.RightSibling != BaseCdxNode.NoSibling )
+            if( lastKeyIdx == keys.Length - 1 && node.RightSibling != BaseCdxNode.NoSibling )
             {
                 // Continue search on the next sibling node.
                 LeafCdxNode rightSibling = (LeafCdxNode)index.ReadNode( node.RightSibling );
@@ -187,7 +187,7 @@ namespace Dbf.Cdx
         }
 
         // There is no built-in BinarySearch for IList<T>, surprisingly.
-        public static Int32 BinarySearch(IList<IKey> list, Byte[] target, IComparer<Byte[]> comparer, Boolean isInAscendingOrder)
+        public static Int32 BinarySearch(IReadOnlyList<LeafCdxKeyEntry> list, Byte[] target, IComparer<Byte[]> comparer, Boolean isInAscendingOrder)
         {
             if( list == null ) throw new ArgumentNullException(nameof(list));
             if( target == null ) throw new ArgumentNullException(nameof(target));

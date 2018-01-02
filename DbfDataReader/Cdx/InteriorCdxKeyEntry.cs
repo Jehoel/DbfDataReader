@@ -5,7 +5,7 @@ using System.Text;
 namespace Dbf.Cdx
 {
     [DebuggerDisplay("KeyValue = {" + nameof(InteriorIndexKeyEntry.StringKey) + "}, RecordNumber = {" + nameof(InteriorIndexKeyEntry.DbfRecordNumber) + "}")]
-    public sealed class InteriorIndexKeyEntry : IKey
+    public sealed class InteriorIndexKeyEntry
     {
         private readonly Byte[] keyBytes;
         //public ReadOnlyCollection<Byte> KeyBytes { get; }
@@ -16,8 +16,6 @@ namespace Dbf.Cdx
 
         /// <summary>Location in the file of the next node for this key range.</summary>
         public Int32 NodePointer   { get; }
-
-        Boolean IKey.IsInteriorNode => true;
 
         private String keyAsString;
         public String StringKey => this.keyAsString ?? ( this.keyAsString = Encoding.ASCII.GetString( this.keyBytes ) );

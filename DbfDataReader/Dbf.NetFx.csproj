@@ -67,7 +67,6 @@
     <Compile Include="Cdx\CdxIndex.cs" />
     <Compile Include="Cdx\InteriorCdxKeyEntry.cs" />
     <Compile Include="Cdx\LeafCdxKeyEntry.cs" />
-    <Compile Include="Cdx\IKey.cs" />
     <Compile Include="Cdx\IndexSearcher.cs" />
     <Compile Include="Cdx\LeafCdxNode.cs" />
     <Compile Include="Cdx\Enums.cs" />

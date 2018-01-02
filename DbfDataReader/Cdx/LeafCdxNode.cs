@@ -176,10 +176,5 @@ namespace Dbf.Cdx
         /// <summary>Number of bytes holding record number, duplicate count and trailing count</summary>
         public Byte   IndexKeyEntryLength     { get; }
         public LeafCdxKeyEntry[] IndexKeys        { get; }
-
-        public override IReadOnlyList<IKey> GetKeys()
-        {
-            return this.IndexKeys;
-        }
     }
 }

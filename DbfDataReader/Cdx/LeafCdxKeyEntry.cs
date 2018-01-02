@@ -5,7 +5,7 @@ using System.Text;
 namespace Dbf.Cdx
 {
     [DebuggerDisplay("KeyValue = {" + nameof(LeafCdxKeyEntry.StringKey) + "}, RecordNumber = {" + nameof(LeafCdxKeyEntry.DbfRecordNumber) + "}")]
-    public class LeafCdxKeyEntry : IKey
+    public class LeafCdxKeyEntry
     {
         private readonly Byte[] keyBytes;
 
@@ -19,8 +19,6 @@ namespace Dbf.Cdx
         }
 
         public Byte[] KeyBytes => this.keyBytes;
-
-        Boolean IKey.IsInteriorNode => false;
 
         public  UInt32 DbfRecordNumber   { get; }
         
