@@ -70,6 +70,7 @@
     <Compile Include="Cdx\LeafCdxNode.cs" />
     <Compile Include="Cdx\Enums.cs" />
     <Compile Include="Cdx\InteriorCdxNode.cs" />
+    <Compile Include="DbfReaders\DbfNumber.cs" />
     <Compile Include="DbfTableTypes.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="GlobalSuppressions.cs" />
