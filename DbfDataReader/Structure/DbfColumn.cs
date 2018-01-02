@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Overby.Extensions.AsyncBinaryReaderWriter;
 
 namespace Dbf
 {

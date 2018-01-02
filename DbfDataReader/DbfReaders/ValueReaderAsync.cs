@@ -2,13 +2,12 @@
 using System.Globalization;
 using System.Text;
 using System.Threading.Tasks;
-using Overby.Extensions.AsyncBinaryReaderWriter;
 
 namespace Dbf
 {
 	public static partial class ValueReader
 	{
-        private static async Task<Boolean?> ReadBooleanTextAsync(DbfColumn column, AsyncBinaryReader reader)
+        private static async Task<Boolean?> ReadBooleanTextAsync(AsyncBinaryReader reader)
         {
             Byte b = await reader.ReadByteAsync().ConfigureAwait(false);
             Char c = (Char)b;
