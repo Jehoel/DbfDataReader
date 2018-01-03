@@ -4,30 +4,21 @@ using System.Text;
 
 namespace Dbf.Cdx
 {
-    [DebuggerDisplay("KeyValue = {" + nameof(LeafCdxKeyEntry.StringKey) + "}, RecordNumber = {" + nameof(LeafCdxKeyEntry.DbfRecordNumber) + "}")]
+    [DebuggerDisplay("KeyValue = {" + nameof(LeafCdxKeyEntry.KeyAsString) + "}, RecordNumber = {" + nameof(LeafCdxKeyEntry.DbfRecordNumber) + "}")]
     public class LeafCdxKeyEntry
     {
-        private readonly Byte[] keyBytes;
-
-        internal LeafCdxKeyEntry(Byte[] keyData, Int32 recordNumber, Byte duplicateBytes, Byte trailingBytes)
+        internal LeafCdxKeyEntry(Byte[] keyData, Int32 recordNumber)
         {
-            this.keyBytes        = keyData;
-
+            this.KeyBytes        = keyData;
             this.DbfRecordNumber = (UInt32)recordNumber;
-            this.DuplicateBytes  = duplicateBytes;
-            this.TrailingBytes   = trailingBytes;
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage( "Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays" )]
-        public Byte[] KeyBytes => this.keyBytes;
+        public Byte[] KeyBytes        { get; }
+        public UInt32 DbfRecordNumber { get; }
 
-        public  UInt32 DbfRecordNumber   { get; }
-        
-        public  Byte  DuplicateBytes { get; }
-        public  Byte  TrailingBytes  { get; }
-
-        private String stringKey;
-        public String StringKey => this.stringKey ?? ( this.stringKey = Encoding.ASCII.GetString( this.keyBytes, 0, count: this.keyBytes.Length - this.TrailingBytes ) );
+        private String keyAsString;
+        public String KeyAsString => this.keyAsString ?? ( this.keyAsString = Encoding.ASCII.GetString( this.KeyBytes ) );
     }
 
     internal class LeafCdxKeyEntryData

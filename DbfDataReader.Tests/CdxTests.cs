@@ -40,7 +40,7 @@ namespace DbfDataReader.NetFx.Tests
                 Tuple.Create("W_PHONE", 864256 )
             };
 
-            Assert.Equal( expectedIndexTags.Select( t => t.Item1 ), rootNode.IndexKeys.Select( key => key.StringKey ) );
+            Assert.Equal( expectedIndexTags.Select( t => t.Item1 ), rootNode.IndexKeys.Select( key => key.KeyAsString ) );
             Assert.Equal( expectedIndexTags.Select( t => t.Item2 ), rootNode.IndexKeys.Select( key => (Int32)key.DbfRecordNumber ) );
         }
 
@@ -113,7 +113,7 @@ namespace DbfDataReader.NetFx.Tests
                 .Select( cdx => cdx.RootNode )
                 .Cast<LeafCdxNode>()
                 .SelectMany( node => node.IndexKeys )
-                .All( keyEntry => keyEntry.StringKey.IndexOf('\0') == -1 );
+                .All( keyEntry => keyEntry.KeyAsString.IndexOf('\0') == -1 );
 
             Assert.True( noNullsInTagNames );
         }

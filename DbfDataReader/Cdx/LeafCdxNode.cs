@@ -112,18 +112,25 @@ namespace Dbf.Cdx
 
                 //////////////////
 
-                Byte[] keyData = new Byte[ keyLength ];// - trailingBytes ];
-                for( UInt32 d = 0; d < record.DuplicateBytes; d++ )
+                Int32 actualKeyLength = keyLength - record.TrailingBytes;
+
+                Byte[] keyData = new Byte[ actualKeyLength ];
+                for( UInt32 d = 0; d < Math.Min( record.DuplicateBytes, actualKeyLength ); d++ )
                 {
                     keyData[d] = previousKeyData[d];
                 }
 
-                for( UInt32 b = record.DuplicateBytes, src = 0; src < newBytesCount; b++, src++ )
+                for
+                (
+                    UInt32 b = record.DuplicateBytes, src = 0;
+                    src < newBytesCount && b < actualKeyLength;
+                    b++, src++
+                )
                 {
                     keyData[b] = packed[ keyValueSrc + src ];
                 }
 
-                LeafCdxKeyEntry keyEntry = new LeafCdxKeyEntry( keyData, record.RecordNumber, record.DuplicateBytes, record.TrailingBytes );
+                LeafCdxKeyEntry keyEntry = new LeafCdxKeyEntry( keyData, record.RecordNumber );
                 entries[i] = keyEntry;
 
                 previousKeyData = keyData;

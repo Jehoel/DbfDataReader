@@ -181,7 +181,7 @@ namespace Dbf.Argh
 
 		private static Object[] DumpExteriorKeyEntry(LeafCdxKeyEntry entry)
 		{
-			String keyAscii = SafeString( entry.StringKey );
+			String keyAscii = SafeString( entry.KeyAsString );
 			String keyBytes = BitConverter.ToString( entry.KeyBytes );
 
 			return new Object[] { keyAscii, keyBytes, entry.DbfRecordNumber };
@@ -218,7 +218,7 @@ namespace Dbf.Argh
 
 				Stopwatch sw = Stopwatch.StartNew();;
 
-				List<UInt32> dbfRecordNumbers = IndexSearcher.SearchIndex( index, keyBytes ).ToList();
+				List<UInt32> dbfRecordNumbers = IndexSearcher.SearchIndex( index, keyBytes ).Select( keyEntry => keyEntry.DbfRecordNumber ).ToList();
 
 				sw.Stop();
 
@@ -239,7 +239,7 @@ namespace Dbf.Argh
 		{
 			Stopwatch sw = Stopwatch.StartNew();
 
-			Int32 count = IndexSearcher.Count( index );
+			Int32 count = IndexSearcher.CountAll( index );
 
 			sw.Stop();
 

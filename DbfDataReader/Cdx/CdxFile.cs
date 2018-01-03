@@ -65,10 +65,10 @@ namespace Dbf.Cdx
         {
             CdxIndex tagIndex = new CdxIndex( this, this.Header, this.RootNode );
 
-            List<LeafCdxKeyEntry> keys = IndexSearcher.GetAllKeys( tagIndex ).ToList(); // ToList() so we don't move the BinaryReader all over the place.
+            List<LeafCdxKeyEntry> keys = IndexSearcher.GetAll( tagIndex ).ToList(); // ToList() so we don't move the BinaryReader all over the place.
             
             return keys.ToDictionary(
-                key => key.StringKey,
+                key => key.KeyAsString,
                 key => this.ReadIndex( key.DbfRecordNumber ) // In the case of tagged-indexes, the 'recno' value (`DbfRecordNumber`) is actually the offset in the CDX file.
             );
         }
