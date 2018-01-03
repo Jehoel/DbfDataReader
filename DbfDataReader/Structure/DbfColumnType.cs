@@ -70,6 +70,11 @@ namespace Dbf
 
     public class MemoBlock
     {
+        internal MemoBlock(UInt64 blockNumber)
+        {
+            this.DbtBlockNumber = blockNumber;
+        }
+
         /// <summary>"10 digits representing a .DBT block number. The number is stored as a string, right justified and padded with blanks."</summary>
         public UInt64 DbtBlockNumber { get; }
     }

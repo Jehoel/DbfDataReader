@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -10,13 +11,13 @@ namespace Dbf
     [DebuggerDisplay("Name={Name}, Index={Index}, Type={ColumnType}({Length})")]
     public class DbfColumn
     {
-        public Int32         Index            { get; }
-        public UInt32        FieldDataAddress { get; }
-        public String        Name             { get; }
-        public DbfColumnType ColumnType       { get; }
-        public Byte          Length           { get; }
-        public Byte          DecimalCount     { get; }
-        public Byte[]        Reserved         { get; }
+        public Int32               Index            { get; }
+        public UInt32              FieldDataAddress { get; }
+        public String              Name             { get; }
+        public DbfColumnType       ColumnType       { get; }
+        public Byte                Length           { get; }
+        public Byte                DecimalCount     { get; }
+        public IReadOnlyList<Byte> Reserved         { get; }
 
         public DbfActualColumnType ActualColumnType { get; }
 

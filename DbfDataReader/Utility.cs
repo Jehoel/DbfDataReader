@@ -29,7 +29,7 @@ namespace Dbf
                 case DbfColumnType.Currency      : return declaredLength; // see original version of DbfValueCurrency.cs
                 case DbfColumnType.Date          : return 8;
                 case DbfColumnType.DateTime      : return 8;
-                case DbfColumnType.DoubleOrBinary: throw new NotImplementedException(); // if FoxPro then 8, else declaredLength...
+                case DbfColumnType.B: throw new NotImplementedException(); // if FoxPro then 8, else declaredLength...
                 case DbfColumnType.Float         : return 20;
                 case DbfColumnType.General       : throw new NotImplementedException();
                 case DbfColumnType.Memo          : return 10; // value is a pointer to a field in a memo file.
@@ -43,6 +43,8 @@ namespace Dbf
             }
         }
 
+#if NOT_NOW
+
         /// <summary>Throws ArgumentExeption if the specified type does not have a predefined fixed length.</summary>
         public static Byte GetDbfColumnTypeFixedLength(DbfColumnType type, Boolean isFoxPro)
         {
@@ -51,7 +53,7 @@ namespace Dbf
                 case DbfColumnType.Logical       : return 1;
                 case DbfColumnType.Date          : return 8;
                 case DbfColumnType.DateTime      : return 8;
-                case DbfColumnType.DoubleOrBinary:
+                case DbfColumnType.B:
                     if( isFoxPro ) return 8; // TODO: Is this right? FoxProValueReader only reads UInt16 (2 bytes)
                     else goto default;
                 case DbfColumnType.Float         : return 20;
@@ -65,5 +67,6 @@ namespace Dbf
                     throw new ArgumentException( "The specified DbfColumnType: " + type + ", does not have a fixed length.", nameof(type));
             }
         }
+#endif
     }
 }

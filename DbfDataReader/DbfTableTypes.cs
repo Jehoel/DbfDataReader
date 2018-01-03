@@ -25,9 +25,9 @@ namespace Dbf
             {
                 return FoxProTableType.Instance;
             }
-            else if( tableHeader.VersionFamily == DbfVersionFamily.DBase5 )
+            else if( tableHeader.VersionFamily == DbfVersionFamily.DBase3 || tableHeader.VersionFamily == DbfVersionFamily.DBase4 || tableHeader.VersionFamily == DbfVersionFamily.DBase5 )
             {
-                return DBase5TableType.Instance;
+                return DBaseTableType.Instance;
             }
             else
             {
@@ -39,29 +39,37 @@ namespace Dbf
         {
             switch( columnType )
             {
-                case DbfColumnType.AutoIncrement:
-                case DbfColumnType.SignedLong:
-                    return DbfActualColumnType.Int32;
+                // Baseline DBF column types:
+                // http://devzone.advantagedatabase.com/dz/webhelp/advantage9.0/server1/dbf_field_types_and_specifications.htm
+
+                case DbfColumnType.Character:
+                    return DbfActualColumnType.Text;
+                
+                case DbfColumnType.Number:
+                    return DbfActualColumnType.NumberText;
+                
+                case DbfColumnType.Date:
+                    return DbfActualColumnType.DateText;
                 
                 case DbfColumnType.Logical:
                     return DbfActualColumnType.BooleanText;
                 
-                case DbfColumnType.Character:
-                    return DbfActualColumnType.Text;
-                
-                case DbfColumnType.Date:
-                case DbfColumnType.DateTime:
-                case DbfColumnType.Double:
-                case DbfColumnType.DoubleOrBinary:
-                case DbfColumnType.Float:
-                case DbfColumnType.General:
                 case DbfColumnType.Memo:
-                case DbfColumnType.Number:
-                case DbfColumnType.Timestamp:
+                    return DbfActualColumnType.MemoText;
+                
+                // "Extended" BDF column types:
+                case DbfColumnType.Double:
+                    return DbfActualColumnType.FloatDouble;
+                
+                case DbfColumnType.SignedLong:
+                    return DbfActualColumnType.Int32;
+                
+                // The AdvantageDB documentation mentions "ShortDate', "Image" and "Binary" - but I can't find exact documentation on their format. I assume 'Image' and 'Binary' refer to General?
+                case DbfColumnType.General:
+                    return DbfActualColumnType.MemoByteArray;
 
-                case DbfColumnType.Currency:
                 default:
-                    throw new ArgumentOutOfRangeException( nameof(columnType), columnType, "This DBF Table Type does not support the specified Ccolumn Type." );
+                    throw new ArgumentOutOfRangeException( nameof(columnType), columnType, "This DBF Table Type does not support the specified Column Type." ); 
             }
         }
 
@@ -81,10 +89,32 @@ namespace Dbf
 
             switch( columnType )
             {
-                case DbfColumnType.DoubleOrBinary:
+                case DbfColumnType.B:
                     return DbfActualColumnType.Int16;
+                
                 case DbfColumnType.Character:
                     return DbfActualColumnType.TextLong;
+                
+                case DbfColumnType.Currency:
+                    return DbfActualColumnType.CurrencyInt64; // 64-bit integer with 4 implied decimal digits, so divide by 1000 to get decimal currency.
+                
+                case DbfColumnType.DateTime:
+                    return DbfActualColumnType.DateTimeBinaryJulian;
+
+                case DbfColumnType.Timestamp:
+                    return DbfActualColumnType.DateTimeBinaryJulian;
+                    
+                case DbfColumnType.AutoIncrement:
+                    return DbfActualColumnType.UInt32;
+                
+                case DbfColumnType.VarChar:
+                    return DbfActualColumnType.Text; // exact the text has trailing padding removed. TODO: Implement this.
+                
+                case DbfColumnType.VarBinary:
+                    return DbfActualColumnType.ByteArray;
+
+                case DbfColumnType.NullFlags:
+                    return DbfActualColumnType.NullFlags;
             }
 
             return base.GetActualColumnType( columnType );
@@ -96,16 +126,19 @@ namespace Dbf
         }
     }
 
-    public class DBase5TableType : DbfTableType
+    public class DBaseTableType : DbfTableType
     {
-        public static new FoxProTableType Instance { get; } = new FoxProTableType();
+        public static new DBaseTableType Instance { get; } = new DBaseTableType();
 
         public override DbfActualColumnType GetActualColumnType(DbfColumnType columnType)
         {
             switch( columnType )
             {
-                case DbfColumnType.DoubleOrBinary:
+                case DbfColumnType.B:
                     return DbfActualColumnType.MemoByteArray;
+
+                case DbfColumnType.DateTime:
+                    return DbfActualColumnType.DateTimeBinaryJulian;
             }
 
             return base.GetActualColumnType( columnType );

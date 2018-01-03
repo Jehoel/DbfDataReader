@@ -24,7 +24,7 @@ namespace Dbf
 
             switch( column.ActualColumnType )
             {
-                case DbfActualColumnType.BooleanText         : return ReadBooleanText         ( reader );
+                case DbfActualColumnType.BooleanText         : return ReadBooleanText         ( column, reader );
                 case DbfActualColumnType.ByteArray           : return ReadByteArray           ( column, reader );
                 case DbfActualColumnType.DateText            : return ReadDateText            ( column, reader );
                 case DbfActualColumnType.DateTimeBinaryJulian: return ReadDateTimeBinaryJulian( column, reader );
@@ -37,8 +37,8 @@ namespace Dbf
                 case DbfActualColumnType.UInt32              : return ReadUInt32              ( column, reader );
                 case DbfActualColumnType.UInt64              : return ReadUInt64              ( column, reader );
                 case DbfActualColumnType.CurrencyInt64       : return ReadCurrencyInt64       ( column, reader );
-                case DbfActualColumnType.MemoByteArray       : throw new NotImplementedException();
-                case DbfActualColumnType.MemoText            : throw new NotImplementedException();
+                case DbfActualColumnType.MemoByteArray       : return ReadMemoByteArray       ( column, reader );
+                case DbfActualColumnType.MemoText            : return ReadMemoText            ( column, reader );
                 case DbfActualColumnType.NumberText          : return ReadNumberText          ( column, reader );
                 case DbfActualColumnType.Text                : return ReadText                ( column, reader, encoding );
                 case DbfActualColumnType.TextLong            : return ReadTextLong            ( column, reader, encoding );
@@ -61,7 +61,7 @@ namespace Dbf
 
             switch( column.ActualColumnType )
             {
-                case DbfActualColumnType.BooleanText         : return ReadBooleanTextAsync         (         reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.BooleanText         : return ReadBooleanTextAsync         ( column, reader           ).ContinueWith( ToObject );
                 case DbfActualColumnType.ByteArray           : return ReadByteArrayAsync           ( column, reader           ).ContinueWith( ToObject );
                 case DbfActualColumnType.DateText            : return ReadDateTextAsync            ( column, reader           ).ContinueWith( ToObject );
                 case DbfActualColumnType.DateTimeBinaryJulian: return ReadDateTimeBinaryJulianAsync( column, reader           ).ContinueWith( ToObject );
@@ -130,8 +130,10 @@ namespace Dbf
 
         #region Read Sync
 
-        private static Boolean? ReadBooleanText(BinaryReader reader)
+        private static Boolean? ReadBooleanText(DbfColumn column, BinaryReader reader)
         {
+            AssertColumn( column, expectedLength: 1, expectedDecimalCount: 0 );
+
             Byte b = reader.ReadByte();
             Char c = (Char)b;
             return ParseBoolean( c );
@@ -189,6 +191,8 @@ namespace Dbf
 
             Int32 days = reader.ReadInt32();
             Int32 time = reader.ReadInt32();
+
+            if( days == 0 && time == 0 ) return null;
 
             Int32 daysSince2299161 = days - 2299161;
             if( daysSince2299161 < 0 ) throw new InvalidOperationException("Invalid DateTime value.");
@@ -250,17 +254,39 @@ namespace Dbf
             return valueDec;
         }
 
-/*
         private static MemoBlock ReadMemoByteArray(DbfColumn column, BinaryReader reader)
         {
-            throw new NotImplementedException();
+            AssertColumn( column, expectedLength: 10, expectedDecimalCount: 0 );
+
+            String value = ReadAsciiString( reader, column.Length );
+            if( String.IsNullOrWhiteSpace( value ) ) return null;
+            UInt64 blockNumber = UInt64.Parse( value, NumberStyles.Any, CultureInfo.InvariantCulture );
+            return new MemoBlock( blockNumber );
         }
 
         private static MemoBlock ReadMemoText(DbfColumn column, BinaryReader reader)
         {
-            throw new NotImplementedException();
+            // FoxPro uses 4-bytes to store a UInt32 block number.
+            // dBase uses 10-bytes to store a Textual Integer.
+
+            AssertColumn( column, expectedDecimalCount: 0 );
+            if( column.Length == 4 )
+            {
+                UInt32 blockNumber = ReadUInt32( column, reader ).Value;
+                return new MemoBlock( blockNumber );
+            }
+            else if( column.Length == 10 )
+            {
+                String value = ReadAsciiString( reader, column.Length );
+                if( String.IsNullOrWhiteSpace( value ) ) return null;
+                UInt64 blockNumber = UInt64.Parse( value, NumberStyles.Any, CultureInfo.InvariantCulture );
+                return new MemoBlock( blockNumber );
+            }
+            else
+            {
+                throw new ArgumentException( "Invalid memo column length. Expected 4 or 10, but encountered {0}.".FormatCurrent( column.Length ), nameof(column) );
+            }
         }
-*/
 
         private static Decimal? ReadNumberText(DbfColumn column, BinaryReader reader)
         {
