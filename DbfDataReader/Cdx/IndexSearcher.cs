@@ -192,7 +192,7 @@ namespace Dbf.Cdx
             {
                 if( index.RootNode is InteriorCdxNode interiorNode )
                 {
-                    return SearchInteriorNodeAsc( index, interiorNode, keyComparison );
+                    return SearchInteriorNodesAsc( index, interiorNode, keyComparison );
                 }
                 else if( index.RootNode is LeafCdxNode leafNode )
                 {
@@ -209,7 +209,7 @@ namespace Dbf.Cdx
             }
         }
 
-        private static IEnumerable<LeafCdxKeyEntry> SearchInteriorNodeAsc(CdxIndex index, InteriorCdxNode node, Func<Byte[],Int32> keyComparison)
+        private static IEnumerable<LeafCdxKeyEntry> SearchInteriorNodesAsc(CdxIndex index, InteriorCdxNode node, Func<Byte[],Int32> keyComparison)
         {
             // Interior node's child-key's values are such that the pointee node's keys are all less-than-or-equal-to that value.
             // A recursive approach isn't necessary as we don't need to backtrack or otherwise re-visit internal nodes, only find the first leaf node and then linear-scan.
@@ -219,36 +219,16 @@ namespace Dbf.Cdx
 
             while( node != null )
             {
-                foreach( InteriorIndexKeyEntry key in node.KeyEntries )
+                BaseCdxNode nextNode = SearchInteriorNodeAsc( index, node, keyComparison );
+                if( nextNode == null ) yield break; // Not found.
+
+                if( ( leafNode = nextNode as LeafCdxNode ) != null )
                 {
-                    Int32 cmp = keyComparison( key.KeyBytes );
-                    if( cmp < 0 )
-                    {
-                        // If a key's value is less than the targetKey, then we can dismiss it, as all of its children will also be less-than-or-equal-to the target.
-                    }
-                    else
-                    {
-                        // If a key is exactly equal to the targetKey, then if it's a unique index then we can simply return the associated DbfRecordNumber and we're done.
-                        // Otherwise, it means we need to go inside (but for simplicity-of-code, we'll always go down to the Leaf-level and return all matches anyway).
-
-                        // If a key is greater than the target, and it's the first time it's been encountered, then we need to go inside, as its children might be matches (as they're all less-than-or-equal the value).
-
-                        // But after seeing the first value, we can return immediately because the next key will have values greater than (and equal to?) the key's value.
-                        // *If* the CDX is such that the node does have children equal to targetKey then they would be retrieved during the linear-scan of the Leaf Node by going for the Right-sibling node.
-
-                        BaseCdxNode nextNode = index.ReadNode( key.NodePointer );
-                        leafNode = nextNode as LeafCdxNode;
-                        if( leafNode != null )
-                        {
-                            node = null;
-                            break;
-                        }
-                        else
-                        {
-                            node = (InteriorCdxNode)nextNode;
-                            break;
-                        }
-                    }
+                    break;
+                }
+                else
+                {
+                    node = (InteriorCdxNode)nextNode;
                 }
             }
 
@@ -257,6 +237,33 @@ namespace Dbf.Cdx
                 IEnumerable<LeafCdxKeyEntry> searchLeafNodeResult = SearchLeafNodeAsc( index, leafNode, keyComparison );
                 foreach( LeafCdxKeyEntry keyEntry in searchLeafNodeResult ) yield return keyEntry;
             }
+        }
+
+        private static BaseCdxNode SearchInteriorNodeAsc(CdxIndex index, InteriorCdxNode node, Func<Byte[],Int32> keyComparison)
+        {
+            foreach( InteriorIndexKeyEntry key in node.KeyEntries )
+            {
+                Int32 cmp = keyComparison( key.KeyBytes );
+                if( cmp < 0 )
+                {
+                    // If a key's value is less than the targetKey, then we can dismiss it, as all of its children will also be less-than-or-equal-to the target.
+                }
+                else
+                {
+                    // If a key is exactly equal to the targetKey, then if it's a unique index then we can simply return the associated DbfRecordNumber and we're done.
+                    // Otherwise, it means we need to go inside (but for simplicity-of-code, we'll always go down to the Leaf-level and return all matches anyway).
+
+                    // If a key is greater than the target, and it's the first time it's been encountered, then we need to go inside, as its children might be matches (as they're all less-than-or-equal the value).
+
+                    // But after seeing the first value, we can return immediately because the next key will have values greater than (and equal to?) the key's value.
+                    // *If* the CDX is such that the node does have children equal to targetKey then they would be retrieved during the linear-scan of the Leaf Node by going for the Right-sibling node.
+
+                    BaseCdxNode nextNode = index.ReadNode( key.NodePointer );
+                    return nextNode;
+                }
+            }
+
+            return null; // No nodes matched the key - the key probably doesn't exist.
         }
 
         private static IEnumerable<LeafCdxKeyEntry> SearchLeafNodeAsc(CdxIndex index, LeafCdxNode node, Func<Byte[],Int32> keyComparison)

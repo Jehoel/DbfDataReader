@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -127,6 +128,30 @@ namespace DbfDataReader.NetFx.Tests
                 .GetFiles("*.cdx")
                 .Select( fi => CdxFile.Open( fi.FullName ) )
                 .ToList();
+        }
+
+        [Fact]
+        public void Cdx_reader_should_be_fast()
+        {
+            // I found an infinite-loop when this customer is looked-up. It looks like the customer simply doesn't exist.
+
+            Byte[] customerKey = new Byte[] { 0x54, 0x45, 0x4D, 0x50, 0x4F, 0x52, 0x41, 0x52, 0x59 };
+
+            FileInfo customerCdxFI = new FileInfo( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" );
+            CdxFile customerCdx = CdxFile.Open( customerCdxFI.FullName );
+            var customerCdxIndexes = customerCdx.ReadTaggedIndexes();
+            CdxIndex keyIndex = customerCdxIndexes["KEY"];
+
+            List<LeafCdxKeyEntry> entriesLoaded = new List<LeafCdxKeyEntry>();
+            Int32 count = 0;
+            IEnumerable<LeafCdxKeyEntry> keyIndexEntries = IndexSearcher.SearchIndex( keyIndex, customerKey );
+            foreach( LeafCdxKeyEntry entry in keyIndexEntries )
+            {
+                count++;
+                entriesLoaded.Add( entry );
+            }
+
+            Assert.Equal( 0, count );
         }
     }
 }
