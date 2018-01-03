@@ -96,70 +96,110 @@ namespace Dbf.Tests
                 Int32 row = 1;
                 while( dbfReader.Read() ) 
                 {
-                    dbfReader.FieldCount.ShouldBe( csvColumnNames.Length + csvDelta );
-
                     String[] csvValues = csvParser.Read();
 
-                    dbfReader.FieldCount.ShouldBe( csvValues.Length + csvDelta );
-
-                    Int32 maxCols = Math.Min( csvValues.Length + csvDelta, dbfReader.FieldCount );
-                    for( Int32 i = 0; i < maxCols; i++ )
-                    {
-                        if( dbfReader.Table.Columns[i].ColumnType == DbfColumnType.NullFlags ) continue;
-
-                        String csvValue = csvValues[i];
-                        if( trimTextFromCsvFile ) csvValue = csvValue.Trim();
-
-                        if( dbfReader.Table.Columns[i].ActualColumnType == DbfActualColumnType.DateTimeBinaryJulian )
-                        {
-                            // the CSV file contains raw bytes, not human-readable text versions of the date.
-                            // No point reimplementing a parser again, skip verification here.
-                            
-                        }
-                        else if( dbfReader[i] is DateTime dt )
-                        {
-                            String dbfValueDt = dt.ToString( "yyyyMMdd", CultureInfo.InvariantCulture );
-                            dbfValueDt.ShouldBe( csvValue, customMessage: $"DateTime. Row: {row}, Column: {i}" );
-                        }
-                        else if( dbfReader[i] is Decimal )
-                        {
-                            Decimal expected = csvValue == "" ? 0 : Decimal.Parse( csvValue, CultureInfo.InvariantCulture );
-
-                            Decimal dbfDecimal = (Decimal)dbfReader[i];
-                            dbfDecimal.ShouldBe( expected, customMessage: $"Decimal. Row: {row}, Column: {i}" );
-                        }
-                        else if( dbfReader[i] is Boolean )
-                        {
-                            Boolean expected;
-                            if( csvValue.ToUpperInvariant() == "F" ) expected = false;
-                            else expected = true;
-
-                            Boolean dbfValue = (Boolean)dbfReader[i];
-                            dbfValue.ShouldBe( expected, customMessage: $"Boolean. Row: {row}, Column: {i}" );
-                        }
-                        else if( dbfReader[i] is Int32 )
-                        {
-                            Int32 expected = csvValue == "" ? 0 : Int32.Parse( csvValue, CultureInfo.InvariantCulture );
-                            
-                            Int32 dbfValue = (Int32)dbfReader[i];
-                            dbfValue.ShouldBe( expected, customMessage: $"Int32. Row: {row}, Column: {i}" );
-                        }
-                        else if( dbfReader[i] is MemoBlock )
-                        {
-                            // Skip verification, we don't support memo values yet.
-                        }
-                        else
-                        {
-                            String dbfValue = dbfReader[i].ToString();
-                            if( trimTextFromCsvFile ) dbfValue = dbfValue.Trim();
-
-                            dbfValue.ShouldBe( csvValue, customMessage: $"String. Row: {row}, Column: {i}" );
-                        }
-                    }//for
+                    ValidateRow( dbfReader, csvColumnNames, csvValues, csvDelta, trimTextFromCsvFile, row );
 
                     row++;
                 }
             }
+        }
+
+        protected void ValidateRowValuesSubset(String csvPath, Boolean trimTextFromCsvFile)
+        {
+            csvPath = GetFullPath( csvPath );
+
+            using( StreamReader textReader = new StreamReader( csvPath, Encoding.GetEncoding( 1252 ) ) )
+            using( CsvParser csvParser = new CsvParser(textReader) )
+            {
+                String[] csvColumnNames = csvParser.Read();
+                Int32 csvDelta = csvColumnNames.Last() == "deleted" ? -1 : 0;
+
+                // Select half the columns as a rough test.
+                Int32[] subsetColumns = new Int32[ csvColumnNames.Length / 2 ];
+                for( Int32 i = 0; i < subsetColumns.Length; i++ ) subsetColumns[i] = i * 2;
+
+                String[] subsetCsvColumnNames = new String[ subsetColumns.Length ];
+                for( Int32 i = 0; i < subsetColumns.Length; i++ ) subsetCsvColumnNames[i] = csvColumnNames[ subsetColumns[i] ];
+
+                using( DbfDataReader dbfReader = this.dbfTable.OpenSubsetDataReader( subsetColumns, randomAccess: false ) )
+                {
+                    Int32 row = 1;
+                    while( dbfReader.Read() ) 
+                    {
+                        String[] csvValues = csvParser.Read();
+                        // Get the subset of csvValues:
+                        String[] subsetCsvValues = new String[ subsetColumns.Length ];
+                        for( Int32 i = 0; i < subsetColumns.Length; i++ ) subsetCsvValues[i] = csvValues[ subsetColumns[i] ];
+
+                        ValidateRow( dbfReader, subsetCsvColumnNames, subsetCsvValues, csvDelta, trimTextFromCsvFile, row );
+
+                        row++;
+                    }
+                }
+            }
+        }
+
+        protected void ValidateRow(DbfDataReader dbfReader, String[] csvColumnNames, String[] csvValues, Int32 csvDelta, Boolean trimTextFromCsvFile, Int32 row)
+        {
+            dbfReader.FieldCount.ShouldBe( csvColumnNames.Length + csvDelta );
+
+            dbfReader.FieldCount.ShouldBe( csvValues.Length + csvDelta );
+
+            Int32 maxCols = Math.Min( csvValues.Length + csvDelta, dbfReader.FieldCount );
+            for( Int32 i = 0; i < maxCols; i++ )
+            {
+                if( dbfReader.Table.Columns[i].ColumnType == DbfColumnType.NullFlags ) continue;
+
+                String csvValue = csvValues[i];
+                if( trimTextFromCsvFile ) csvValue = csvValue.Trim();
+
+                if( dbfReader.Table.Columns[i].ActualColumnType == DbfActualColumnType.DateTimeBinaryJulian )
+                {
+                    // the CSV file contains raw bytes, not human-readable text versions of the date.
+                    // No point reimplementing a parser again, skip verification here.
+                            
+                }
+                else if( dbfReader[i] is DateTime dt )
+                {
+                    String dbfValueDt = dt.ToString( "yyyyMMdd", CultureInfo.InvariantCulture );
+                    dbfValueDt.ShouldBe( csvValue, customMessage: $"DateTime. Row: {row}, Column: {i}" );
+                }
+                else if( dbfReader[i] is Decimal )
+                {
+                    Decimal expected = csvValue == "" ? 0 : Decimal.Parse( csvValue, CultureInfo.InvariantCulture );
+
+                    Decimal dbfDecimal = (Decimal)dbfReader[i];
+                    dbfDecimal.ShouldBe( expected, customMessage: $"Decimal. Row: {row}, Column: {i}" );
+                }
+                else if( dbfReader[i] is Boolean )
+                {
+                    Boolean expected;
+                    if( csvValue.ToUpperInvariant() == "F" ) expected = false;
+                    else expected = true;
+
+                    Boolean dbfValue = (Boolean)dbfReader[i];
+                    dbfValue.ShouldBe( expected, customMessage: $"Boolean. Row: {row}, Column: {i}" );
+                }
+                else if( dbfReader[i] is Int32 )
+                {
+                    Int32 expected = csvValue == "" ? 0 : Int32.Parse( csvValue, CultureInfo.InvariantCulture );
+                            
+                    Int32 dbfValue = (Int32)dbfReader[i];
+                    dbfValue.ShouldBe( expected, customMessage: $"Int32. Row: {row}, Column: {i}" );
+                }
+                else if( dbfReader[i] is MemoBlock )
+                {
+                    // Skip verification, we don't support memo values yet.
+                }
+                else
+                {
+                    String dbfValue = dbfReader[i].ToString();
+                    if( trimTextFromCsvFile ) dbfValue = dbfValue.Trim();
+
+                    dbfValue.ShouldBe( csvValue, customMessage: $"String. Row: {row}, Column: {i}" );
+                }
+            }//for
         }
     }
 }

@@ -48,5 +48,11 @@ namespace Dbf.Tests
         {
             ValidateRowValues( "dbase_31.csv", trimTextFromCsvFile: false );
         }
+
+        [Fact]
+        public void Should_have_correct_row_values_for_subsets()
+        {
+            ValidateRowValuesSubset( "dbase_31.csv", trimTextFromCsvFile: true );
+        }
     }
 }
