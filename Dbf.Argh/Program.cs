@@ -16,11 +16,13 @@ namespace Dbf.Argh
 
 			//DumpIndexFile( @"C:\git\rss\DbfDataReader\DbfDataReader\DbfDataReader.Tests\TestData\foxprodb\calls.CDX" );
 
+			DumpIndexFile( @"C:\git\rss\DbfDataReader\Data\ORDER.CDX" );
+
 			DumpIndexFile( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" );
 
-			//DumpIndexFile( @"C:\git\rss\DbfDataReader\Data\CUSTOMER-dbfMan-1.cdx" );
+			DumpIndexFile( @"C:\git\rss\DbfDataReader\Data\VEHICLE.CDX" );
 
-			//DumpIndexFile( @"C:\git\rss\DbfDataReader\Data\ORDER.CDX" );
+			//DumpIndexFile( @"C:\git\rss\DbfDataReader\Data\CUSTOMER-dbfMan-1.cdx" );
 
 			Console.ReadLine();
 		}
@@ -40,6 +42,7 @@ namespace Dbf.Argh
 		public static void DumpIndexFile(String fileName)
 		{
 			CdxIndex index = OpenCdxFileAndPromptUserForCdxIndexTag( fileName );
+			if( index == null ) return;
 
 			String option = ConsoleUtility.ReadAny( "[B]rowse, [C]ount or [S]earch index?", "B", "C", "S" ).ToUpperInvariant();
 			if( option == "B" )
@@ -73,7 +76,9 @@ namespace Dbf.Argh
 			CdxIndex currentIndex = null;
 			do
 			{
-				String tagName = ConsoleUtility.ReadLine( "Specify tag name of index to open." );
+				String tagName = ConsoleUtility.ReadLine( "Specify tag name of index to open or \"q\" to exit." );
+				if( tagName == "q" ) return null;
+
 				if( taggedIndexes.TryGetValue( tagName, out CdxIndex index ) )
 				{
 					Console.WriteLine("Selected index \"{0}\".", tagName );
@@ -155,7 +160,7 @@ namespace Dbf.Argh
 			String tag  = tagName;
 			Object hoff = h.Offset;
 			Object roff = rootNode.Offset;
-			String expr = h.ForExpressionAsString;
+			String expr = h.KeyExpressionAsString;
 			String ordr = h.Order.ToString();
 			String uniq = h.Options.HasFlag( CdxIndexOptions.Unique ) ? "True" : "False";
 			String type = rootNode is LeafCdxNode ? "Exterior" : "Interior";

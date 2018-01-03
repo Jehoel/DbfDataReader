@@ -90,11 +90,18 @@ namespace Dbf.Cdx
 
             ///////////////
 
-            this.KeyExpressionAsString = Encoding.ASCII.GetString( keyExpressionPool, 0, keyExpressionPoolLength );
+            // Trim any trailing nulls in the Key and FOR expressions:
+            Int32 len = keyExpressionPoolLength;
+            while( len > 0 && keyExpressionPool[len-1] == 0x00 ) len--;
+
+            this.KeyExpressionAsString = Encoding.ASCII.GetString( keyExpressionPool, 0, len );
 
             if( options.HasFlag( CdxIndexOptions.HasForClause ) )
             {
-                this.ForExpressionAsString = Encoding.ASCII.GetString( keyExpressionPool, keyExpressionPoolLength, forExpressionPoolLength );
+                len = forExpressionPoolLength;
+                while( len > 0 && keyExpressionPool[keyExpressionPoolLength + (len-1)] == 0x00 ) len--;
+
+                this.ForExpressionAsString = Encoding.ASCII.GetString( keyExpressionPool, keyExpressionPoolLength, len );
             }
             else
             {
