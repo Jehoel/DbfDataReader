@@ -125,7 +125,25 @@ namespace Dbf
         }
 
 
-        private static async Task<MemoBlock> ReadMemoByteArrayAsync(DbfColumn column, AsyncBinaryReader reader)
+        private static async Task<MemoBlock> ReadMemo4ByteArrayAsync(DbfColumn column, AsyncBinaryReader reader)
+        {
+            AssertColumn( column, expectedLength: 4, expectedDecimalCount: 0 );
+
+            UInt32 blockNumber = await reader.ReadUInt32Async().ConfigureAwait(false);
+            return new MemoBlock( blockNumber );
+        }
+
+
+        private static async Task<MemoBlock> ReadMemo4TextAsync(DbfColumn column, AsyncBinaryReader reader)
+        {
+            AssertColumn( column, expectedLength: 4, expectedDecimalCount: 0 );
+
+            UInt32 blockNumber = await reader.ReadUInt32Async().ConfigureAwait(false);
+            return new MemoBlock( blockNumber );
+        }
+
+
+        private static async Task<MemoBlock> ReadMemo10ByteArrayAsync(DbfColumn column, AsyncBinaryReader reader)
         {
             AssertColumn( column, expectedLength: 10, expectedDecimalCount: 0 );
 
@@ -136,28 +154,14 @@ namespace Dbf
         }
 
 
-        private static async Task<MemoBlock> ReadMemoTextAsync(DbfColumn column, AsyncBinaryReader reader)
+        private static async Task<MemoBlock> ReadMemo10TextAsync(DbfColumn column, AsyncBinaryReader reader)
         {
-            // FoxPro uses 4-bytes to store a UInt32 block number.
-            // dBase uses 10-bytes to store a Textual Integer.
+            AssertColumn( column, expectedLength: 10, expectedDecimalCount: 0 );
 
-            AssertColumn( column, expectedDecimalCount: 0 );
-            if( column.Length == 4 )
-            {
-                UInt32 blockNumber = ReadUInt32( column, reader ).Value;
-                return new MemoBlock( blockNumber );
-            }
-            else if( column.Length == 10 )
-            {
-                String value = await ReadAsciiStringAsync( reader, column.Length ).ConfigureAwait(false);
-                if( String.IsNullOrWhiteSpace( value ) ) return null;
-                UInt64 blockNumber = UInt64.Parse( value, NumberStyles.Any, CultureInfo.InvariantCulture );
-                return new MemoBlock( blockNumber );
-            }
-            else
-            {
-                throw new ArgumentException( "Invalid memo column length. Expected 4 or 10, but encountered {0}.".FormatCurrent( column.Length ), nameof(column) );
-            }
+            String value = await ReadAsciiStringAsync( reader, column.Length ).ConfigureAwait(false);
+            if( String.IsNullOrWhiteSpace( value ) ) return null;
+            UInt64 blockNumber = UInt64.Parse( value, NumberStyles.Any, CultureInfo.InvariantCulture );
+            return new MemoBlock( blockNumber );
         }
 
 
@@ -199,7 +203,8 @@ namespace Dbf
 
         private static async Task<Byte[]> ReadNullFlagsAsync(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column, expectedLength: 1, expectedDecimalCount: 0 ); // How do these NullFlags columns work? Are they always 1 byte long or more?
+            AssertColumn( column, expectedLength: 1, expectedDecimalCount: 0 );
+            // Apparently this is a variable-length 
 
             Byte[] nullFlags = await reader.ReadBytesAsync( column.Length ).ConfigureAwait(false);
             return nullFlags;

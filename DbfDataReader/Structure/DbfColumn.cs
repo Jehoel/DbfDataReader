@@ -20,6 +20,7 @@ namespace Dbf
         public IReadOnlyList<Byte> Reserved         { get; }
 
         public DbfActualColumnType ActualColumnType { get; }
+        public Int32               ActualLength     { get; }
 
         public DbfColumn(Int32 index, UInt32 fieldDataAddress, String name, DbfColumnType columnType, Byte length, Byte decimalCount, DbfActualColumnType actualColumnType, Byte[] reserved)
         {
@@ -32,6 +33,7 @@ namespace Dbf
             this.Reserved         = reserved;
 
             this.ActualColumnType = actualColumnType;
+            this.ActualLength     = DbfTableType.GetColumnLength( actualColumnType, length );
         }
 
         public DbfColumn(Int32 index, String name, DbfColumnType columnType, Byte length, Byte decimalCount, DbfActualColumnType actualColumnType)
@@ -45,6 +47,7 @@ namespace Dbf
             this.Reserved         = null;
 
             this.ActualColumnType = actualColumnType;
+            this.ActualLength     = DbfTableType.GetColumnLength( actualColumnType, length );
         }
 
         [CLSCompliant(false)]
@@ -59,7 +62,7 @@ namespace Dbf
             Byte       decimalCount     = await reader.ReadByteAsync()   .ConfigureAwait(false);
             Byte[]     reserved         = await reader.ReadBytesAsync(14).ConfigureAwait(false);
 
-            DbfColumnType columnType2 = (DbfColumnType)columnType;
+            DbfColumnType       columnType2      = (DbfColumnType)columnType;
             DbfActualColumnType actualColumnType = tableType.GetActualColumnType( columnType2 );
 
             return new DbfColumn( index, fieldDataAddress, name, columnType2, length, decimalCount, actualColumnType, reserved );
@@ -89,12 +92,12 @@ namespace Dbf
             if( name == null ) return null;
 
             Byte        columnType       = reader.ReadByte();
-            UInt32      fieldDataAddress = reader.ReadUInt32(); // ignore field data address
+            UInt32      fieldDataAddress = reader.ReadUInt32();
             Byte        length           = reader.ReadByte();
             Byte        decimalCount     = reader.ReadByte();
-            Byte[]      reserved         = reader.ReadBytes(14); // skip the reserved bytes
+            Byte[]      reserved         = reader.ReadBytes(14);
 
-            DbfColumnType columnType2 = (DbfColumnType)columnType;
+            DbfColumnType       columnType2      = (DbfColumnType)columnType;
             DbfActualColumnType actualColumnType = tableType.GetActualColumnType( columnType2 );
 
             return new DbfColumn( index, fieldDataAddress, name, columnType2, length, decimalCount, actualColumnType, reserved );

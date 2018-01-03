@@ -37,8 +37,10 @@ namespace Dbf
                 case DbfActualColumnType.UInt32              : return ReadUInt32              ( column, reader );
                 case DbfActualColumnType.UInt64              : return ReadUInt64              ( column, reader );
                 case DbfActualColumnType.CurrencyInt64       : return ReadCurrencyInt64       ( column, reader );
-                case DbfActualColumnType.MemoByteArray       : return ReadMemoByteArray       ( column, reader );
-                case DbfActualColumnType.MemoText            : return ReadMemoText            ( column, reader );
+                case DbfActualColumnType.Memo4ByteArray      : return ReadMemo4ByteArray      ( column, reader );
+                case DbfActualColumnType.Memo4Text           : return ReadMemo4Text           ( column, reader );
+                case DbfActualColumnType.Memo10ByteArray     : return ReadMemo10ByteArray     ( column, reader );
+                case DbfActualColumnType.Memo10Text          : return ReadMemo10Text          ( column, reader );
                 case DbfActualColumnType.NumberText          : return ReadNumberText          ( column, reader );
                 case DbfActualColumnType.Text                : return ReadText                ( column, reader, encoding );
                 case DbfActualColumnType.TextLong            : return ReadTextLong            ( column, reader, encoding );
@@ -74,8 +76,10 @@ namespace Dbf
                 case DbfActualColumnType.UInt32              : return ReadUInt32Async              ( column, reader           ).ContinueWith( ToObject );
                 case DbfActualColumnType.UInt64              : return ReadUInt64Async              ( column, reader           ).ContinueWith( ToObject );
                 case DbfActualColumnType.CurrencyInt64       : return ReadCurrencyInt64Async       ( column, reader           ).ContinueWith( ToObject );
-                case DbfActualColumnType.MemoByteArray       : throw new NotImplementedException();
-                case DbfActualColumnType.MemoText            : throw new NotImplementedException();
+                case DbfActualColumnType.Memo4ByteArray      : return ReadMemo4ByteArrayAsync      ( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.Memo4Text           : return ReadMemo4TextAsync           ( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.Memo10ByteArray     : return ReadMemo10ByteArrayAsync     ( column, reader           ).ContinueWith( ToObject );
+                case DbfActualColumnType.Memo10Text          : return ReadMemo10TextAsync          ( column, reader           ).ContinueWith( ToObject );
                 case DbfActualColumnType.NumberText          : return ReadNumberTextAsync          ( column, reader           ).ContinueWith( ToObject );
                 case DbfActualColumnType.Text                : return ReadTextAsync                ( column, reader, encoding ).ContinueWith( ToObject );
                 case DbfActualColumnType.TextLong            : return ReadTextLongAsync            ( column, reader, encoding ).ContinueWith( ToObject );
@@ -254,7 +258,23 @@ namespace Dbf
             return valueDec;
         }
 
-        private static MemoBlock ReadMemoByteArray(DbfColumn column, BinaryReader reader)
+        private static MemoBlock ReadMemo4ByteArray(DbfColumn column, BinaryReader reader)
+        {
+            AssertColumn( column, expectedLength: 4, expectedDecimalCount: 0 );
+
+            UInt32 blockNumber = reader.ReadUInt32();
+            return new MemoBlock( blockNumber );
+        }
+
+        private static MemoBlock ReadMemo4Text(DbfColumn column, BinaryReader reader)
+        {
+            AssertColumn( column, expectedLength: 4, expectedDecimalCount: 0 );
+
+            UInt32 blockNumber = reader.ReadUInt32();
+            return new MemoBlock( blockNumber );
+        }
+
+        private static MemoBlock ReadMemo10ByteArray(DbfColumn column, BinaryReader reader)
         {
             AssertColumn( column, expectedLength: 10, expectedDecimalCount: 0 );
 
@@ -264,28 +284,14 @@ namespace Dbf
             return new MemoBlock( blockNumber );
         }
 
-        private static MemoBlock ReadMemoText(DbfColumn column, BinaryReader reader)
+        private static MemoBlock ReadMemo10Text(DbfColumn column, BinaryReader reader)
         {
-            // FoxPro uses 4-bytes to store a UInt32 block number.
-            // dBase uses 10-bytes to store a Textual Integer.
+            AssertColumn( column, expectedLength: 10, expectedDecimalCount: 0 );
 
-            AssertColumn( column, expectedDecimalCount: 0 );
-            if( column.Length == 4 )
-            {
-                UInt32 blockNumber = ReadUInt32( column, reader ).Value;
-                return new MemoBlock( blockNumber );
-            }
-            else if( column.Length == 10 )
-            {
-                String value = ReadAsciiString( reader, column.Length );
-                if( String.IsNullOrWhiteSpace( value ) ) return null;
-                UInt64 blockNumber = UInt64.Parse( value, NumberStyles.Any, CultureInfo.InvariantCulture );
-                return new MemoBlock( blockNumber );
-            }
-            else
-            {
-                throw new ArgumentException( "Invalid memo column length. Expected 4 or 10, but encountered {0}.".FormatCurrent( column.Length ), nameof(column) );
-            }
+            String value = ReadAsciiString( reader, column.Length );
+            if( String.IsNullOrWhiteSpace( value ) ) return null;
+            UInt64 blockNumber = UInt64.Parse( value, NumberStyles.Any, CultureInfo.InvariantCulture );
+            return new MemoBlock( blockNumber );
         }
 
         private static Decimal? ReadNumberText(DbfColumn column, BinaryReader reader)
@@ -325,7 +331,8 @@ namespace Dbf
 
         private static Byte[] ReadNullFlags(DbfColumn column, BinaryReader reader)
         {
-            AssertColumn( column, expectedLength: 1, expectedDecimalCount: 0 ); // How do these NullFlags columns work? Are they always 1 byte long or more?
+            AssertColumn( column, expectedLength: 1, expectedDecimalCount: 0 );
+            // Apparently this is a variable-length 
 
             Byte[] nullFlags = reader.ReadBytes( column.Length );
             return nullFlags;
