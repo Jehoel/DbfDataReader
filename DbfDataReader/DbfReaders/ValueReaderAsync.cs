@@ -9,7 +9,7 @@ namespace Dbf
 	{
         private static async Task<Boolean?> ReadBooleanTextAsync(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column, expectedLength: 1, expectedDecimalCount: 0 );
+            AssertColumn( column, expectedLength: DbfActualColumnTypeLengths.BooleanText, expectedDecimalCount: 0 );
 
             Byte b = await reader.ReadByteAsync().ConfigureAwait(false);
             Char c = (Char)b;
@@ -26,7 +26,7 @@ namespace Dbf
         private static async Task<DateTime?> ReadDateTextAsync(DbfColumn column, AsyncBinaryReader reader)
         {
             // TODO: If it has a Length of 6, does that mean it's "yyMMdd" format?
-            AssertColumn( column, 8, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.DateText, 0 );
 
             String dateStr = await ReadAsciiStringAsync( reader, column.Length ).ConfigureAwait(false);
             if( String.IsNullOrWhiteSpace( dateStr ) ) return null;
@@ -38,7 +38,7 @@ namespace Dbf
 
         private static async Task<DateTime?> ReadDateTimeBinaryJulianAsync(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column, 8, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.DateTimeBinaryJulian, 0 );
 
             // bytes 0-3: date: little-endian 32-bit integer Julian day number.
             // bytes 4-7: time: milliseconds since midnight
@@ -61,63 +61,63 @@ namespace Dbf
 
         private static async Task<Single?> ReadFloatSingleAsync(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column, 4, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.FloatSingle, 0 );
             return await reader.ReadSingleAsync().ConfigureAwait(false);
         }
 
 
         private static async Task<Double?> ReadFloatDoubleAsync(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column, 8, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.FloatDouble, 0 );
             return await reader.ReadDoubleAsync().ConfigureAwait(false);
         }
 
 
         private static async Task<Int16?> ReadInt16Async(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column, 2, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.Int16, 0 );
             return await reader.ReadInt16Async().ConfigureAwait(false);
         }
 
 
         private static async Task<UInt16?> ReadUInt16Async(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column, 2, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.Int16, 0 );
             return await reader.ReadUInt16Async().ConfigureAwait(false);
         }
 
 
         private static async Task<Int32?> ReadInt32Async(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column, 4, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.Int32, 0 );
             return await reader.ReadInt32Async().ConfigureAwait(false);
         }
 
 
         private static async Task<UInt32?> ReadUInt32Async(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column, 4, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.Int32, 0 );
             return await reader.ReadUInt32Async().ConfigureAwait(false);
         }
 
 
         private static async Task<Int64?> ReadInt64Async(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column, 8, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.Int64, 0 );
             return await reader.ReadInt64Async().ConfigureAwait(false);
         }
 
 
         private static async Task<UInt64?> ReadUInt64Async(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column, 8, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.Int64, 0 );
             return await reader.ReadUInt64Async().ConfigureAwait(false);
         }
 
 
         private static async Task<Decimal?> ReadCurrencyInt64Async(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column, 8, 4 );
+            AssertColumn( column, DbfActualColumnTypeLengths.Int64, expectedDecimalCount: 4 );
             Int64 valueInt64 = await reader.ReadInt64Async().ConfigureAwait(false);
             Decimal valueDec = new Decimal( valueInt64 );
             valueDec = valueDec / 10000;
@@ -127,7 +127,7 @@ namespace Dbf
 
         private static async Task<MemoBlock> ReadMemo4ByteArrayAsync(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column, expectedLength: 4, expectedDecimalCount: 0 );
+            AssertColumn( column, expectedLength: DbfActualColumnTypeLengths.Memo4, expectedDecimalCount: 0 );
 
             UInt32 blockNumber = await reader.ReadUInt32Async().ConfigureAwait(false);
             return new MemoBlock( blockNumber );
@@ -136,7 +136,7 @@ namespace Dbf
 
         private static async Task<MemoBlock> ReadMemo4TextAsync(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column, expectedLength: 4, expectedDecimalCount: 0 );
+            AssertColumn( column, expectedLength: DbfActualColumnTypeLengths.Memo4, expectedDecimalCount: 0 );
 
             UInt32 blockNumber = await reader.ReadUInt32Async().ConfigureAwait(false);
             return new MemoBlock( blockNumber );
@@ -145,7 +145,7 @@ namespace Dbf
 
         private static async Task<MemoBlock> ReadMemo10ByteArrayAsync(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column, expectedLength: 10, expectedDecimalCount: 0 );
+            AssertColumn( column, expectedLength: DbfActualColumnTypeLengths.Memo10, expectedDecimalCount: 0 );
 
             String value = await ReadAsciiStringAsync( reader, column.Length ).ConfigureAwait(false);
             if( String.IsNullOrWhiteSpace( value ) ) return null;
@@ -156,7 +156,7 @@ namespace Dbf
 
         private static async Task<MemoBlock> ReadMemo10TextAsync(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column, expectedLength: 10, expectedDecimalCount: 0 );
+            AssertColumn( column, expectedLength: DbfActualColumnTypeLengths.Memo10, expectedDecimalCount: 0 );
 
             String value = await ReadAsciiStringAsync( reader, column.Length ).ConfigureAwait(false);
             if( String.IsNullOrWhiteSpace( value ) ) return null;
@@ -167,7 +167,8 @@ namespace Dbf
 
         private static async Task<Decimal?> ReadNumberTextAsync(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column ); // Number columns can have non-zero decimal-count values.
+            // Nothing to assert: NumberText columns can have non-zero decimal-count values (but can they have zero length?)
+            if( column.Length < 1 ) throw new InvalidOperationException("Number columns cannot be less than 1 character in length.");
             if( column.Length > 20 ) throw new InvalidOperationException("Number columns cannot exceed 20 characters.");
 
             String value = await ReadAsciiStringAsync( reader, column.Length ).ConfigureAwait(false);
@@ -179,6 +180,8 @@ namespace Dbf
         private static async Task<String> ReadTextAsync(DbfColumn column, AsyncBinaryReader reader, Encoding encoding)
         {
             AssertColumn( column, expectedDecimalCount: 0 );
+            if( column.Length <   1 ) throw new InvalidOperationException("Text columns cannot be less than 1 character in length.");
+            if( column.Length > 255 ) throw new InvalidOperationException("Text columns cannot exceed 255 characters.");
 
             Byte[] text = await reader.ReadBytesAsync( column.Length ).ConfigureAwait(false);
             
@@ -191,6 +194,8 @@ namespace Dbf
 
         private static async Task<String> ReadTextLongAsync(DbfColumn column, AsyncBinaryReader reader, Encoding encoding)
         {
+            if( column.Length < 1 ) throw new InvalidOperationException("Text columns cannot be less than 1 character in length.");
+
             Int32  length = ( column.DecimalCount << 8 ) | column.Length;
             Byte[] text = await reader.ReadBytesAsync( length ).ConfigureAwait(false);
             
@@ -203,8 +208,9 @@ namespace Dbf
 
         private static async Task<Byte[]> ReadNullFlagsAsync(DbfColumn column, AsyncBinaryReader reader)
         {
-            AssertColumn( column, expectedLength: 1, expectedDecimalCount: 0 );
-            // Apparently this is a variable-length 
+            if( column.Length < 1 ) throw new InvalidOperationException("Null flags columns cannot be less than 1 byte in length.");
+            AssertColumn( column, expectedDecimalCount: 0 );
+            // Null-flags columns are variable length.
 
             Byte[] nullFlags = await reader.ReadBytesAsync( column.Length ).ConfigureAwait(false);
             return nullFlags;

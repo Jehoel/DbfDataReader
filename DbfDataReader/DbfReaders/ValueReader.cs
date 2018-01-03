@@ -136,7 +136,7 @@ namespace Dbf
 
         private static Boolean? ReadBooleanText(DbfColumn column, BinaryReader reader)
         {
-            AssertColumn( column, expectedLength: 1, expectedDecimalCount: 0 );
+            AssertColumn( column, expectedLength: DbfActualColumnTypeLengths.BooleanText, expectedDecimalCount: 0 );
 
             Byte b = reader.ReadByte();
             Char c = (Char)b;
@@ -175,7 +175,7 @@ namespace Dbf
         private static DateTime? ReadDateText(DbfColumn column, BinaryReader reader)
         {
             // TODO: If it has a Length of 6, does that mean it's "yyMMdd" format?
-            AssertColumn( column, 8, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.DateText, 0 );
 
             String dateStr = ReadAsciiString( reader, column.Length );
             if( String.IsNullOrWhiteSpace( dateStr ) ) return null;
@@ -186,7 +186,7 @@ namespace Dbf
 
         private static DateTime? ReadDateTimeBinaryJulian(DbfColumn column, BinaryReader reader)
         {
-            AssertColumn( column, 8, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.DateTimeBinaryJulian, 0 );
 
             // bytes 0-3: date: little-endian 32-bit integer Julian day number.
             // bytes 4-7: time: milliseconds since midnight
@@ -208,50 +208,50 @@ namespace Dbf
 
         private static Single? ReadFloatSingle(DbfColumn column, BinaryReader reader)
         {
-            AssertColumn( column, 4, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.FloatSingle, 0 );
             return reader.ReadSingle();
         }
 
         private static Double? ReadFloatDouble(DbfColumn column, BinaryReader reader)
         {
-            AssertColumn( column, 8, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.FloatDouble, 0 );
             return reader.ReadDouble();
         }
 
         private static Int16? ReadInt16(DbfColumn column, BinaryReader reader)
         {
-            AssertColumn( column, 2, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.Int16, 0 );
             return reader.ReadInt16();
         }
         private static UInt16? ReadUInt16(DbfColumn column, BinaryReader reader)
         {
-            AssertColumn( column, 2, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.Int16, 0 );
             return reader.ReadUInt16();
         }
         private static Int32? ReadInt32(DbfColumn column, BinaryReader reader)
         {
-            AssertColumn( column, 4, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.Int32, 0 );
             return reader.ReadInt32();
         }
         private static UInt32? ReadUInt32(DbfColumn column, BinaryReader reader)
         {
-            AssertColumn( column, 4, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.Int32, 0 );
             return reader.ReadUInt32();
         }
         private static Int64? ReadInt64(DbfColumn column, BinaryReader reader)
         {
-            AssertColumn( column, 8, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.Int64, 0 );
             return reader.ReadInt64();
         }
         private static UInt64? ReadUInt64(DbfColumn column, BinaryReader reader)
         {
-            AssertColumn( column, 8, 0 );
+            AssertColumn( column, DbfActualColumnTypeLengths.Int64, 0 );
             return reader.ReadUInt64();
         }
         
         private static Decimal? ReadCurrencyInt64(DbfColumn column, BinaryReader reader)
         {
-            AssertColumn( column, 8, 4 );
+            AssertColumn( column, DbfActualColumnTypeLengths.Int64, expectedDecimalCount: 4 );
             Int64 valueInt64 = reader.ReadInt64();
             Decimal valueDec = new Decimal( valueInt64 );
             valueDec = valueDec / 10000;
@@ -260,7 +260,7 @@ namespace Dbf
 
         private static MemoBlock ReadMemo4ByteArray(DbfColumn column, BinaryReader reader)
         {
-            AssertColumn( column, expectedLength: 4, expectedDecimalCount: 0 );
+            AssertColumn( column, expectedLength: DbfActualColumnTypeLengths.Memo4, expectedDecimalCount: 0 );
 
             UInt32 blockNumber = reader.ReadUInt32();
             return new MemoBlock( blockNumber );
@@ -268,7 +268,7 @@ namespace Dbf
 
         private static MemoBlock ReadMemo4Text(DbfColumn column, BinaryReader reader)
         {
-            AssertColumn( column, expectedLength: 4, expectedDecimalCount: 0 );
+            AssertColumn( column, expectedLength: DbfActualColumnTypeLengths.Memo4, expectedDecimalCount: 0 );
 
             UInt32 blockNumber = reader.ReadUInt32();
             return new MemoBlock( blockNumber );
@@ -276,7 +276,7 @@ namespace Dbf
 
         private static MemoBlock ReadMemo10ByteArray(DbfColumn column, BinaryReader reader)
         {
-            AssertColumn( column, expectedLength: 10, expectedDecimalCount: 0 );
+            AssertColumn( column, expectedLength: DbfActualColumnTypeLengths.Memo10, expectedDecimalCount: 0 );
 
             String value = ReadAsciiString( reader, column.Length );
             if( String.IsNullOrWhiteSpace( value ) ) return null;
@@ -286,7 +286,7 @@ namespace Dbf
 
         private static MemoBlock ReadMemo10Text(DbfColumn column, BinaryReader reader)
         {
-            AssertColumn( column, expectedLength: 10, expectedDecimalCount: 0 );
+            AssertColumn( column, expectedLength: DbfActualColumnTypeLengths.Memo10, expectedDecimalCount: 0 );
 
             String value = ReadAsciiString( reader, column.Length );
             if( String.IsNullOrWhiteSpace( value ) ) return null;
@@ -296,7 +296,8 @@ namespace Dbf
 
         private static Decimal? ReadNumberText(DbfColumn column, BinaryReader reader)
         {
-            AssertColumn( column ); // Number columns can have non-zero decimal-count values.
+            // Nothing to assert: NumberText columns can have non-zero decimal-count values (but can they have zero length?)
+            if( column.Length < 1 ) throw new InvalidOperationException("Number columns cannot be less than 1 character in length.");
             if( column.Length > 20 ) throw new InvalidOperationException("Number columns cannot exceed 20 characters.");
 
             String value = ReadAsciiString( reader, column.Length );
@@ -309,6 +310,8 @@ namespace Dbf
         private static String ReadText(DbfColumn column, BinaryReader reader, Encoding encoding)
         {
             AssertColumn( column, expectedDecimalCount: 0 );
+            if( column.Length <   1 ) throw new InvalidOperationException("Text columns cannot be less than 1 character in length.");
+            if( column.Length > 255 ) throw new InvalidOperationException("Text columns cannot exceed 255 characters.");
 
             Byte[] text = reader.ReadBytes( column.Length );
             
@@ -320,6 +323,8 @@ namespace Dbf
 
         private static String ReadTextLong(DbfColumn column, BinaryReader reader, Encoding encoding)
         {
+            if( column.Length < 1 ) throw new InvalidOperationException("Text columns cannot be less than 1 character in length.");
+
             Int32  length = ( column.DecimalCount << 8 ) | column.Length;
             Byte[] text = reader.ReadBytes( length );
             
@@ -331,8 +336,9 @@ namespace Dbf
 
         private static Byte[] ReadNullFlags(DbfColumn column, BinaryReader reader)
         {
-            AssertColumn( column, expectedLength: 1, expectedDecimalCount: 0 );
-            // Apparently this is a variable-length 
+            if( column.Length < 1 ) throw new InvalidOperationException("Null flags columns cannot be less than 1 byte in length.");
+            AssertColumn( column, expectedDecimalCount: 0 );
+            // Null-flags columns are variable length.
 
             Byte[] nullFlags = reader.ReadBytes( column.Length );
             return nullFlags;
