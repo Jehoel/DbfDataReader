@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Dbf.Cdx
 {
     public static class IndexSearcher
     {
+        #region Utility
+
         private static LeafCdxNode GetLeftmostLeafNode(CdxIndex index)
         {
             BaseCdxNode node = index.RootNode;
@@ -28,7 +31,11 @@ namespace Dbf.Cdx
             return leftmostLeafNode;
         }
 
-        public static IEnumerable<LeafCdxKeyEntry> GetAllKeys(CdxIndex index)
+        #endregion
+
+        #region Get
+
+        public static IEnumerable<LeafCdxKeyEntry> GetAll(CdxIndex index)
         {
             if( index == null ) throw new ArgumentNullException(nameof(index));
 
@@ -46,7 +53,35 @@ namespace Dbf.Cdx
             }
         }
 
-        public static Int32 Count(CdxIndex index)
+        /// <summary>Applies the specified predicate to all leaf keys in an index. Use only if you really need to check every key entry. Use SearchIndex instead for most use-cases.</summary>
+        public static IEnumerable<LeafCdxKeyEntry> GetAll(CdxIndex index, Func<Byte[],Boolean> keyPredicate)
+        {
+            if( index == null ) throw new ArgumentNullException(nameof(index));
+            if( keyPredicate == null ) throw new ArgumentNullException(nameof(keyPredicate));
+
+#if REIMPLEMENTATION
+            LeafCdxNode currentLeaf = GetLeftmostLeafNode( index );
+            while( true )
+            {
+                foreach( LeafCdxKeyEntry keyEntry in currentLeaf.IndexKeys )
+                {
+                    if( keyPredicate( keyEntry.KeyBytes ) ) yield return keyEntry;
+                }
+
+                if( currentLeaf.RightSibling == BaseCdxNode.NoSibling ) break;
+                
+                currentLeaf = (LeafCdxNode)index.ReadNode( currentLeaf.RightSibling );
+            }
+#else
+            return GetAll( index ).Where( ke => keyPredicate( ke.KeyBytes ) );
+#endif
+        }
+
+        #endregion
+
+        #region Count
+
+        public static Int32 CountAll(CdxIndex index)
         {
             if( index == null ) throw new ArgumentNullException(nameof(index));
 
@@ -71,28 +106,101 @@ namespace Dbf.Cdx
             return total;
         }
 
-        /// <summary>Returns all matching DBF Record Number values that match the specified key. The key length must match the index.</summary>
-        public static IEnumerable<UInt32> SearchIndex(CdxIndex index, Byte[] targetKey)
+        /// <summary>Applies the specified predicate to all leaf keys in an index. Use only if you really need to check every key entry. Use CountRange() instead for most use-cases.</summary>
+        public static Int32 CountAll(CdxIndex index, Func<Byte[],Boolean> keyPredicate)
+        {
+            if( index == null ) throw new ArgumentNullException(nameof(index));
+            if( keyPredicate == null ) throw new ArgumentNullException(nameof(keyPredicate));
+
+            Int32 total = 0;
+
+            LeafCdxNode currentLeaf = GetLeftmostLeafNode( index );
+            while( true )
+            {
+                foreach( LeafCdxKeyEntry keyEntry in currentLeaf.IndexKeys )
+                {
+                    if( keyPredicate( keyEntry.KeyBytes ) ) total += 1;
+                }
+
+                if( currentLeaf.RightSibling == BaseCdxNode.NoSibling ) break;
+                
+                currentLeaf = (LeafCdxNode)index.ReadNode( currentLeaf.RightSibling );
+            }
+
+            return total;
+        }
+
+        /// <summary>Counts the results from SearchIndex.</summary>
+        public static Int32 CountRange(CdxIndex index, Func<Byte[],Int32> keyComparison)
+        {
+            if( index == null ) throw new ArgumentNullException(nameof(index));
+            if( keyComparison == null ) throw new ArgumentNullException(nameof(keyComparison));
+
+#if REIMPLEMENTATION
+            Int32 total = 0;
+            LeafCdxNode currentLeaf = GetLeftmostLeafNode( index );
+            while( currentLeaf != null )
+            {
+                foreach( LeafCdxKeyEntry keyEntry in currentLeaf.IndexKeys )
+                {
+                    Int32 cmp = keyComparison( keyEntry.KeyBytes );
+                    if( cmp < 0 )
+                    {
+                        // NOOP
+                    }
+                    else if( cmp == 0 )
+                    {
+                        total += 1;
+                    }
+                    else if( cmp > 0 )
+                    {
+                        return total;
+                    }
+                }
+
+                if( currentLeaf.RightSibling == BaseCdxNode.NoSibling ) currentLeaf = null;
+                else                                                    currentLeaf = (LeafCdxNode)index.ReadNode( currentLeaf.RightSibling );
+            }
+            return total;
+#else
+            return SearchIndex( index, keyComparison ).Count();
+#endif
+        }
+
+        #endregion
+
+        #region Search
+
+        /// <summary>Returns all matching DBF Record Number values that exactly match the specified key. The key length must match the index.</summary>
+        public static IEnumerable<LeafCdxKeyEntry> SearchIndex(CdxIndex index, Byte[] targetKey)
         {
             if( index == null ) throw new ArgumentNullException(nameof(index));
             if( targetKey == null ) throw new ArgumentNullException(nameof(targetKey));
-            if( index.Header.KeyLength != targetKey.Length ) throw new ArgumentException("The specified key value has a different length than the index key.", nameof(targetKey));
+            if( targetKey.Length != index.Header.KeyLength ) throw new ArgumentException( "Value array length does not match the index's key length.", nameof(targetKey) );
 
-            BaseCdxNode node = index.RootNode;
+            return SearchIndex( index, keyComparison: b => SequentialByteArrayComparer.CompareWithoutChecks( b, targetKey ) );
+        }
+
+        public static IEnumerable<LeafCdxKeyEntry> SearchIndex(CdxIndex index, Func<Byte[],Int32> keyComparison)
+        {
+            if( index == null ) throw new ArgumentNullException(nameof(index));
+            if( keyComparison == null ) throw new ArgumentNullException(nameof(keyComparison));
 
             Boolean isAscending = index.Header.Order == CdxIndexOrder.Ascending;
 
             if( isAscending )
             {
-                if( node is LeafCdxNode leafNode )
+                if( index.RootNode is InteriorCdxNode interiorNode )
                 {
-                    return SearchLeafNodeAsc( index, leafNode, targetKey, SequentialByteArrayComparer.Instance );
+                    return SearchInteriorNodeAsc( index, interiorNode, keyComparison );
+                }
+                else if( index.RootNode is LeafCdxNode leafNode )
+                {
+                    return SearchLeafNodeAsc( index, leafNode, keyComparison );
                 }
                 else
                 {
-                    InteriorCdxNode interiorNode = (InteriorCdxNode)node;
-
-                    return SearchInteriorNodeAsc( index, interiorNode, targetKey, SequentialByteArrayComparer.Instance );
+                    return Enumerable.Empty<LeafCdxKeyEntry>();
                 }
             }
             else
@@ -101,7 +209,7 @@ namespace Dbf.Cdx
             }
         }
 
-        public static IEnumerable<UInt32> SearchInteriorNodeAsc(CdxIndex index, InteriorCdxNode node, Byte[] targetKey, IComparer<Byte[]> comparer)
+        private static IEnumerable<LeafCdxKeyEntry> SearchInteriorNodeAsc(CdxIndex index, InteriorCdxNode node, Func<Byte[],Int32> keyComparison)
         {
             // Interior node's child-key's values are such that the pointee node's keys are all less-than-or-equal-to that value.
             // A recursive approach isn't necessary as we don't need to backtrack or otherwise re-visit internal nodes, only find the first leaf node and then linear-scan.
@@ -113,7 +221,7 @@ namespace Dbf.Cdx
             {
                 foreach( InteriorIndexKeyEntry key in node.KeyEntries )
                 {
-                    Int32 cmp = comparer.Compare( key.KeyBytes, targetKey );
+                    Int32 cmp = keyComparison( key.KeyBytes );
                     if( cmp < 0 )
                     {
                         // If a key's value is less than the targetKey, then we can dismiss it, as all of its children will also be less-than-or-equal-to the target.
@@ -121,7 +229,7 @@ namespace Dbf.Cdx
                     else
                     {
                         // If a key is exactly equal to the targetKey, then if it's a unique index then we can simply return the associated DbfRecordNumber and we're done.
-                        // Otherwise, it means we need to go inside.
+                        // Otherwise, it means we need to go inside (but for simplicity-of-code, we'll always go down to the Leaf-level and return all matches anyway).
 
                         // If a key is greater than the target, and it's the first time it's been encountered, then we need to go inside, as its children might be matches (as they're all less-than-or-equal the value).
 
@@ -146,27 +254,27 @@ namespace Dbf.Cdx
 
             if( leafNode != null )
             {
-                IEnumerable<UInt32> searchLeafNodeResult = SearchLeafNodeAsc( index, leafNode, targetKey, comparer );
-                foreach( UInt32 dbfRecordNumber in searchLeafNodeResult ) yield return dbfRecordNumber;
+                IEnumerable<LeafCdxKeyEntry> searchLeafNodeResult = SearchLeafNodeAsc( index, leafNode, keyComparison );
+                foreach( LeafCdxKeyEntry keyEntry in searchLeafNodeResult ) yield return keyEntry;
             }
         }
 
-        public static IEnumerable<UInt32> SearchLeafNodeAsc(CdxIndex index, LeafCdxNode node, Byte[] targetKey, IComparer<Byte[]> comparer)
+        private static IEnumerable<LeafCdxKeyEntry> SearchLeafNodeAsc(CdxIndex index, LeafCdxNode node, Func<Byte[],Int32> keyComparison)
         {
             Int32 lastKeyIdx = -1;
             IReadOnlyList<LeafCdxKeyEntry> keys = node.IndexKeys;
             for( Int32 i = 0; i < keys.Count; i++ )
             {
-                LeafCdxKeyEntry key = keys[i];
+                LeafCdxKeyEntry keyEntry = keys[i];
 
-                Int32 cmp = comparer.Compare( key.KeyBytes, targetKey );
+                Int32 cmp = keyComparison( keyEntry.KeyBytes );
                 if( cmp < 0 )
                 {
                     // NOOP.
                 }
                 else if( cmp == 0 )
                 {
-                    yield return key.DbfRecordNumber;
+                    yield return keyEntry;
                     lastKeyIdx = i;
                 }
                 else // cmp > 0 )
@@ -181,10 +289,12 @@ namespace Dbf.Cdx
                 // Continue search on the next sibling node.
                 LeafCdxNode rightSibling = (LeafCdxNode)index.ReadNode( node.RightSibling );
 
-                IEnumerable<UInt32> rightSiblingResults = SearchLeafNodeAsc( index, rightSibling, targetKey, comparer );
-                foreach( UInt32 dbfRecordNumber in rightSiblingResults ) yield return dbfRecordNumber;
+                IEnumerable<LeafCdxKeyEntry> rightSiblingResults = SearchLeafNodeAsc( index, rightSibling, keyComparison );
+                foreach( LeafCdxKeyEntry keyEntry in rightSiblingResults ) yield return keyEntry;
             }
         }
+
+        #endregion
 
         // There is no built-in BinarySearch for IList<T>, surprisingly.
         public static Int32 BinarySearch(IReadOnlyList<LeafCdxKeyEntry> list, Byte[] target, IComparer<Byte[]> comparer, Boolean isInAscendingOrder)
@@ -217,46 +327,5 @@ namespace Dbf.Cdx
 
             return ~lower;
         }
-    }
-
-    public class SequentialByteArrayComparer : IComparer<Byte[]>
-    {
-        // I wonder if an unsafe-cast to UInt64* and comparing that way would be faster...
-
-        Int32 IComparer<Byte[]>.Compare(Byte[] x, Byte[] y)
-        {
-            //return Compare( x, y );
-            return CompareWithoutChecks( x, y );
-        }
-
-        public static Int32 Compare(Byte[] x, Byte[] y)
-        {
-            if( x == null ) throw new ArgumentNullException(nameof(x));
-            if( y == null ) throw new ArgumentNullException(nameof(y));
-            if( x.Length != y.Length ) throw new ArgumentException("Argument arrays have different lengths.");
-
-            for( Int32 i = 0; i < x.Length; i++ )
-            {
-                Int32 cmp = x[i].CompareTo( y[i] );
-                if( cmp != 0 ) return cmp;
-            }
-
-            return 0;
-        }
-
-        [System.Diagnostics.CodeAnalysis.SuppressMessage( "Microsoft.Design", "CA1062:Validate arguments of public methods", MessageId = "0" )]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage( "Microsoft.Design", "CA1062:Validate arguments of public methods", MessageId = "1" )]
-        public static Int32 CompareWithoutChecks(Byte[] x, Byte[] y)
-        {
-            for( Int32 i = 0; i < x.Length; i++ )
-            {
-                Int32 cmp = x[i].CompareTo( y[i] );
-                if( cmp != 0 ) return cmp;
-            }
-
-            return 0;
-        }
-
-        public static SequentialByteArrayComparer Instance { get; } = new SequentialByteArrayComparer();
     }
 }
