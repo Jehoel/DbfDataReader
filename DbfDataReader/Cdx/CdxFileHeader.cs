@@ -27,12 +27,13 @@ namespace Dbf.Cdx
             UInt16 keyExpressionPoolLength = reader.ReadUInt16();
             Byte[] keyExpression           = reader.ReadBytes( 512 );
 
-#if DEBUG
-            Int64 actualEnd = reader.BaseStream.Position;
-            Int64 expectedEnd = start + 1024;
-            if( actualEnd != expectedEnd ) throw new CdxException( CdxErrorCode.DidNotRead1024BytesInCdxIndexHeader );
-            if( ( options | CdxIndexOptions.All ) != CdxIndexOptions.All ) throw new CdxException( CdxErrorCode.InvalidCdxIndexOptionsAttributes );
-#endif
+            if( BuildOptions.StrictChecks )
+            {
+                Int64 actualEnd = reader.BaseStream.Position;
+                Int64 expectedEnd = start + 1024;
+                if( actualEnd != expectedEnd ) throw new CdxException( CdxErrorCode.DidNotRead1024BytesInCdxIndexHeader );
+                if( ( options | CdxIndexOptions.All ) != CdxIndexOptions.All ) throw new CdxException( CdxErrorCode.InvalidCdxIndexOptionsAttributes );
+            }
             
             return new CdxIndexHeader(
                 start,

@@ -13,4 +13,9 @@ namespace Dbf
             return new FileStream( fileName, FileMode.Open, FileSystemRights.ReadData, FileShare.ReadWrite, 4096, options );
         }
     }
+
+    internal static class BuildOptions
+    {
+        public const Boolean StrictChecks = true;
+    }
 }

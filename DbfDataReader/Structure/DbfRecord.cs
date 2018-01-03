@@ -34,10 +34,11 @@ namespace Dbf
             this.Status = status;
             this.values = values;
 
-#if DEBUG
-            // Validate values:
-            if( values.Any( o => Object.ReferenceEquals( o, null ) ) ) throw new ArgumentException("Values arrays cannot contain CLR null values. Use DBNull.Value to represent NULL values.", nameof(values));
-#endif
+            if( BuildOptions.StrictChecks )
+            {
+                // Validate values:
+                if( values.Any( o => Object.ReferenceEquals( o, null ) ) ) throw new ArgumentException("Values arrays cannot contain CLR null values. Use DBNull.Value to represent NULL values.", nameof(values));
+            }
 
             this.Values = new ReadOnlyCollection<Object>( this.values );
         }

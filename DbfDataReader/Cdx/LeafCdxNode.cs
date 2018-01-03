@@ -27,11 +27,12 @@ namespace Dbf.Cdx
             Byte   recordNumberDuplicateCountTrailingCountBytes = reader.ReadByte();
             Byte[] indexKeysPacked         = reader.ReadBytes( IndexKeyBufferLength );
 
-#if DEBUG
-            Int64 posActual = reader.BaseStream.Position;
-            Int64 posExpected = offset + 512;
-            if( posActual != posExpected ) throw new InvalidOperationException("Didn't read expected number of bytes in " + nameof(LeafCdxNode) + ".");
-#endif
+            if( BuildOptions.StrictChecks )
+            {
+                Int64 posActual = reader.BaseStream.Position;
+                Int64 posExpected = offset + 512;
+                if( posActual != posExpected ) throw new InvalidOperationException("Didn't read expected number of bytes in " + nameof(LeafCdxNode) + ".");
+            }
 
             LeafCdxKeyEntry[] entries;
             UnpackIndexKeys(
@@ -103,10 +104,11 @@ namespace Dbf.Cdx
 
                 keyValueSrc -= newBytesCount;
 
-#if DEBUG
-                if( keyValueSrc < 0 ) throw new CdxException( CdxErrorCode.InvalidLeafNodeCalculatedKeyStartIndex );
-                if( ( i == 0 && record.DuplicateBytes > 0 ) || ( previousKeyData == null && record.DuplicateBytes > 0 ) ) throw new CdxException( CdxErrorCode.FirstLeafNodeKeyEntryHasDuplicateBytes );
-#endif
+                if( BuildOptions.StrictChecks )
+                {
+                    if( keyValueSrc < 0 ) throw new CdxException( CdxErrorCode.InvalidLeafNodeCalculatedKeyStartIndex );
+                    if( ( i == 0 && record.DuplicateBytes > 0 ) || ( previousKeyData == null && record.DuplicateBytes > 0 ) ) throw new CdxException( CdxErrorCode.FirstLeafNodeKeyEntryHasDuplicateBytes );
+                }
 
                 //////////////////
 

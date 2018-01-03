@@ -13,11 +13,12 @@ namespace Dbf.Cdx
             Int32  rightSibling = reader.ReadInt32();
             Byte[] keyValues    = reader.ReadBytes(500);
 
-#if DEBUG
-            if( keyCount     > 250 ) throw new CdxException( CdxErrorCode.InvalidInteriorNodeKeyCount );
-            if( leftSibling  <  -1 ) throw new CdxException( CdxErrorCode.InvalidInteriorNodeLeftSibling );
-            if( rightSibling <  -1 ) throw new CdxException( CdxErrorCode.InvalidInteriorNodeRightSibling );
-#endif
+            if( BuildOptions.StrictChecks )
+            {
+                if( keyCount     > 250 ) throw new CdxException( CdxErrorCode.InvalidInteriorNodeKeyCount );
+                if( leftSibling  <  -1 ) throw new CdxException( CdxErrorCode.InvalidInteriorNodeLeftSibling );
+                if( rightSibling <  -1 ) throw new CdxException( CdxErrorCode.InvalidInteriorNodeRightSibling );
+            }
 
             InteriorIndexKeyEntry[] keyEntries = ParseKeyValues( keyCount, indexHeader.KeyLength, keyValues );
 
