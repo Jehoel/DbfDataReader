@@ -46,7 +46,7 @@ namespace Dbf.Tests
         [Fact]
         public void Should_have_correct_row_values()
         {
-            ValidateRowValues("dbase_31.csv");
+            ValidateRowValues( "dbase_31.csv", trimTextFromCsvFile: false );
         }
     }
 }
