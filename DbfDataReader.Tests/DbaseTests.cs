@@ -114,6 +114,7 @@ namespace Dbf.Tests
             {
                 String[] csvColumnNames = csvParser.Read();
                 Int32 csvDelta = csvColumnNames.Last() == "deleted" ? -1 : 0;
+                if( csvColumnNames.Length % 2 == 0 ) csvDelta = 0;
 
                 // Select half the columns as a rough test.
                 Int32[] subsetColumns = new Int32[ csvColumnNames.Length / 2 ];
