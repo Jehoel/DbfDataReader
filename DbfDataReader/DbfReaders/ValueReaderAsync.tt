@@ -79,7 +79,6 @@ foreach( String line in File.ReadAllLines( GetValueReaderCSFileName() ) )
 using System.Globalization;
 using System.Text;
 using System.Threading.Tasks;
-using Overby.Extensions.AsyncBinaryReaderWriter;
 
 namespace Dbf
 {

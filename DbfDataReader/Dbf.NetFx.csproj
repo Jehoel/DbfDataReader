@@ -44,15 +44,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Overby.Extensions.AsyncBinaryReaderWriter, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Overby.Extensions.AsyncBinaryReaderWriter.1.0.35\lib\net461\Overby.Extensions.AsyncBinaryReaderWriter.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
@@ -60,6 +54,8 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AsyncBinaryReader\AsyncBinaryReader.cs" />
+    <Compile Include="AsyncBinaryReader\DotNetInternals.cs" />
     <Compile Include="Cdx\BaseCdxNode.cs" />
     <Compile Include="Cdx\CdxException.cs" />
     <Compile Include="Cdx\CdxFile.cs" />
@@ -71,7 +67,8 @@
     <Compile Include="Cdx\LeafCdxNode.cs" />
     <Compile Include="Cdx\Enums.cs" />
     <Compile Include="Cdx\InteriorCdxNode.cs" />
-    <Compile Include="DbfTableTypes.cs" />
+    <Compile Include="DbfReaders\DbfNumber.cs" />
+    <Compile Include="Structure\DbfTableTypes.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="DbfReaders\AsyncDbfDataReader.cs" />
@@ -85,14 +82,14 @@
     <Compile Include="Structure\DbfColumn.cs" />
     <Compile Include="Structure\DbfColumnType.cs" />
     <Compile Include="DbfReaders\DbfDataReader.cs" />
-    <Compile Include="DbfFileFormatException.cs" />
+    <Compile Include="Structure\DbfFileFormatException.cs" />
     <Compile Include="Structure\DbfHeader.cs" />
     <Compile Include="Structure\DbfMemo.cs" />
     <Compile Include="Structure\DbfMemoDbase3.cs" />
     <Compile Include="Structure\DbfMemoDbase4.cs" />
     <Compile Include="Structure\DbfMemoFoxPro.cs" />
-    <Compile Include="DbfRecord.cs" />
-    <Compile Include="DbfTable.cs" />
+    <Compile Include="Structure\DbfRecord.cs" />
+    <Compile Include="Structure\DbfTable.cs" />
     <None Include="Structure\DbfValueCurrency.cs" />
     <None Include="Structure\DbfValueMemo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

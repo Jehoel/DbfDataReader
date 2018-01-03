@@ -48,10 +48,10 @@ namespace Dbf.Tests
             this.dbfDataReader.GetString(16).ShouldBe("New");
             this.dbfDataReader.GetString(17).ShouldBe("Driveway");
             this.dbfDataReader.GetString(18).ShouldBe("050712TR2819.cor");
-            this.dbfDataReader.GetInt32(19).ShouldBe(2);
-            this.dbfDataReader.GetInt32(20).ShouldBe(2);
+            this.dbfDataReader.GetDecimal(19).ShouldBe(2M);
+            this.dbfDataReader.GetDecimal(20).ShouldBe(2);
             this.dbfDataReader.GetString(21).ShouldBe("MS4");
-            this.dbfDataReader.GetInt32(22).ShouldBe(1331);
+            this.dbfDataReader.GetDecimal(22).ShouldBe(1331);
             this.dbfDataReader.GetDecimal(23).ShouldBe(226625.000m);
             this.dbfDataReader.GetDecimal(24).ShouldBe(1131.323m);
             this.dbfDataReader.GetDecimal(25).ShouldBe(3.1m);
@@ -59,7 +59,7 @@ namespace Dbf.Tests
             this.dbfDataReader.GetDecimal(27).ShouldBe(0.897088m);
             this.dbfDataReader.GetDecimal(28).ShouldBe(557904.898m);
             this.dbfDataReader.GetDecimal(29).ShouldBe(2212577.192m);
-            this.dbfDataReader.GetInt32(30).ShouldBe(401);
+            this.dbfDataReader.GetDecimal(30).ShouldBe(401);
         }
 
         [Fact]

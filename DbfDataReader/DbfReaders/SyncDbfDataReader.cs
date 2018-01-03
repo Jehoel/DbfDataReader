@@ -246,7 +246,8 @@ namespace Dbf
                 }
                 else
                 {
-                    runs[i] = -Utility.GetDbfColumnTypeLength( allColumns[i] );
+                    Int32 columnLength = allColumns[i].ActualLength;
+                    runs[i] = -columnLength;
                 }
             }
 

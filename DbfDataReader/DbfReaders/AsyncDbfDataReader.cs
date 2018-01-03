@@ -5,8 +5,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Overby.Extensions.AsyncBinaryReaderWriter;
-
 namespace Dbf
 {
     public class AsyncDbfDataReader : DbfDataReader

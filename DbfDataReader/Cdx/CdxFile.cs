@@ -38,7 +38,7 @@ namespace Dbf.Cdx
         [System.Diagnostics.CodeAnalysis.SuppressMessage( "Microsoft.Reliability", "CA2000:Dispose objects before losing scope" )]
         public static CdxFile Open(String fileName)
         {
-            FileStream fs = new FileStream( fileName, FileMode.Open, FileAccess.Read, FileShare.Read );
+            FileStream fs = Utility.OpenFileForReading( fileName, randomAccess: true, async: false );
             try
             {
                 BinaryReader rdr = new BinaryReader( fs );
