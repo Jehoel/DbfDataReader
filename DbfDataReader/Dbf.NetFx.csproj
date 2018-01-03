@@ -71,7 +71,7 @@
     <Compile Include="Cdx\Enums.cs" />
     <Compile Include="Cdx\InteriorCdxNode.cs" />
     <Compile Include="DbfReaders\DbfNumber.cs" />
-    <Compile Include="DbfTableTypes.cs" />
+    <Compile Include="Structure\DbfTableTypes.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="DbfReaders\AsyncDbfDataReader.cs" />
@@ -85,14 +85,14 @@
     <Compile Include="Structure\DbfColumn.cs" />
     <Compile Include="Structure\DbfColumnType.cs" />
     <Compile Include="DbfReaders\DbfDataReader.cs" />
-    <Compile Include="DbfFileFormatException.cs" />
+    <Compile Include="Structure\DbfFileFormatException.cs" />
     <Compile Include="Structure\DbfHeader.cs" />
     <Compile Include="Structure\DbfMemo.cs" />
     <Compile Include="Structure\DbfMemoDbase3.cs" />
     <Compile Include="Structure\DbfMemoDbase4.cs" />
     <Compile Include="Structure\DbfMemoFoxPro.cs" />
-    <Compile Include="DbfRecord.cs" />
-    <Compile Include="DbfTable.cs" />
+    <Compile Include="Structure\DbfRecord.cs" />
+    <Compile Include="Structure\DbfTable.cs" />
     <None Include="Structure\DbfValueCurrency.cs" />
     <None Include="Structure\DbfValueMemo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
