@@ -18,7 +18,6 @@ namespace Dbf
 
         public override Encoding TextEncoding { get; }
 
-        /// <param name="ignoreEof">If true, then a </param>
         internal AsyncDbfDataReader(DbfTable table, Boolean randomAccess, Encoding encoding, DbfDataReaderOptions options)
             : base( table )
         {

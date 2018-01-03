@@ -21,7 +21,8 @@
     <Prefer32Bit>false</Prefer32Bit>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <NoWarn>3001, 3002, 3003, 3009</NoWarn>
+    <NoWarn>1591, 3001, 3002, 3003, 3009</NoWarn>
+    <DocumentationFile>bin\Debug\Dbf.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -31,7 +32,8 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
-    <NoWarn>3001, 3002, 3003, 3009</NoWarn>
+    <NoWarn>1591, 3001, 3002, 3003, 3009</NoWarn>
+    <DocumentationFile>bin\Release\Dbf.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <RootNamespace>Dbf</RootNamespace>
