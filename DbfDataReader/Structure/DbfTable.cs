@@ -42,7 +42,7 @@ namespace Dbf
             if( textEncoding == null ) throw new ArgumentNullException(nameof(textEncoding));
 
             using( FileStream fs = Utility.OpenFileForReading( fileName, randomAccess: false, async: false ) )
-            using( BinaryReader reader = new BinaryReader( fs, Encoding.ASCII ) )
+            using( BinaryReader reader = new BinaryReader( fs, Encoding.ASCII ) ) // Use ASCII encoding to read column names, they're always ASCII.
             {
                 DbfHeader header = DbfHeader.Read( reader );
 
@@ -72,7 +72,7 @@ namespace Dbf
             if( textEncoding == null ) throw new ArgumentNullException(nameof(textEncoding));
 
             using( FileStream fs = Utility.OpenFileForReading( fileName, randomAccess: false, async: true ) )
-            using( AsyncBinaryReader reader = new AsyncBinaryReader( fs, Encoding.ASCII ) )
+            using( AsyncBinaryReader reader = new AsyncBinaryReader( fs, Encoding.ASCII ) ) // Use ASCII encoding to read column names, they're always ASCII.
             {
                 DbfHeader header = await DbfHeader.ReadAsync( reader ).ConfigureAwait(false);
                 IDbfTableType tableType = DbfTableType.GetDbfTableType( header );
