@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -59,7 +60,32 @@ namespace DbfDataReader.NetFx.Tests
         };
 
         [Fact]
-        public void Cdx_reader_should_work()
+        public void Cdx_reader_should_read_all_nodes()
+        {
+            Cdx_reader_should_real_all_nodes_iter();
+        }
+
+        [Fact]
+        public void Cdx_reader_should_read_all_nodes_5_times()
+        {
+            // Do a cold-start run:
+            Stopwatch sw = Stopwatch.StartNew();
+
+            Cdx_reader_should_real_all_nodes_iter();
+
+            TimeSpan coldStartTime = sw.Elapsed;
+            sw.Restart();
+            
+            for( Int32 i = 0; i < 5; i++ )
+            {
+                Cdx_reader_should_real_all_nodes_iter();
+            }
+            sw.Stop();
+
+            TimeSpan warmStartTime5 = sw.Elapsed;
+        }
+
+        private void Cdx_reader_should_real_all_nodes_iter()
         {
             foreach( FileInfo file in _testCdxFiles )
             {
@@ -131,7 +157,7 @@ namespace DbfDataReader.NetFx.Tests
         }
 
         [Fact]
-        public void Cdx_reader_should_be_fast()
+        public void Cdx_reader_should_return_nothing_for_nonexistant_keys()
         {
             // I found an infinite-loop when this customer is looked-up. It looks like the customer simply doesn't exist.
 
@@ -152,6 +178,90 @@ namespace DbfDataReader.NetFx.Tests
             }
 
             Assert.Equal( 0, count );
+        }
+
+        [Fact]
+        public void Cdx_reader_should_be_fast()
+        {
+            // Find 1000 keys, 5 keys apart.
+
+            Stopwatch sw = Stopwatch.StartNew();
+
+            FileInfo customerCdxFI = new FileInfo( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" );
+            CdxFile customerCdx = CdxFile.Open( customerCdxFI.FullName );
+            var customerCdxIndexes = customerCdx.ReadTaggedIndexes();
+            CdxIndex keyIndex = customerCdxIndexes["KEY"];
+
+            TimeSpan setupPart1 = sw.Elapsed;
+            sw.Restart();
+
+            List<LeafCdxKeyEntry> allCustomerKeys = IndexSearcher.GetAll( keyIndex ).ToList();
+
+            TimeSpan setupPart2 = sw.Elapsed;
+
+            ShuffleList( 123, allCustomerKeys );
+
+            TimeSpan setupPart3 = sw.Elapsed;
+            sw.Restart();
+
+            for( Int32 i = 0; i < 500; i++ )
+            {
+                Cdx_reader_should_be_fast_iter( keyIndex, allCustomerKeys );
+            }
+            
+            TimeSpan searched1000x500 = sw.Elapsed;
+            sw.Restart();
+            
+            //foreach( List<LeafCdxKeyEntry> result in results )
+            //{
+            //    Assert.Equal( 1, result.Count );
+            //}
+
+            // Results (on Dell XPS 15, 2017 model, NVMe SSD):
+            // 1. Native key comparison, Release build, Strict checks: 12,907.0081 ms
+            // 2. .NET key comparison, Release build, Strict checks  : 13,276.4800 ms
+        }
+
+        private static TimeSpan Cdx_reader_should_be_fast_iter(CdxIndex index, List<LeafCdxKeyEntry> keys)
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+
+            // As all these keys are from the original index, they should all exist, so it should return 1000 when using `Single()` or `FirstOrDefault()`.
+            // We don't check if the same key returned multiple values, that's outside the scope of this test.
+
+            List<LeafCdxKeyEntry> results = Enumerable
+                .Range( 0, 1000 )
+                .Select( i => keys[i] )
+                .Select( customerKey => IndexSearcher.SearchIndex( index, customerKey.KeyBytes ).Single() )
+                //.SelectMany( matches => matches )
+                .ToList();
+
+            Assert.Equal( 1000, results.Count );
+
+            sw.Stop();
+            return sw.Elapsed;
+        }
+
+        private static void ShuffleList<T>(Int32 seed, List<T> list)
+        {
+            // Fisher-Yates.
+            // https://stackoverflow.com/questions/108819/best-way-to-randomize-an-array-with-net
+
+            Random rng = new Random( seed );
+
+            Int32 n = list.Count;
+            while( n > 1 )
+            {
+                Int32 k = rng.Next( n-- );
+                T temp = list[n];
+                list[n] = list[k];
+                list[k] = temp;
+            }
+        }
+
+        private void Cdx_reader_should_be_fast_iter()
+        {
+            
         }
     }
 }

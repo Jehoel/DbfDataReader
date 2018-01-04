@@ -178,7 +178,14 @@ namespace Dbf.Cdx
             if( targetKey == null ) throw new ArgumentNullException(nameof(targetKey));
             if( targetKey.Length != index.Header.KeyLength ) throw new ArgumentException( "Value array length does not match the index's key length.", nameof(targetKey) );
 
-            return SearchIndex( index, keyComparison: b => SequentialByteArrayComparer.CompareWithoutChecks( b, targetKey ) );
+            if( BuildOptions.NativeCompare )
+            {
+                return SearchIndex( index, keyComparison: b => SequentialByteArrayComparer.CompareWithoutChecksNative( b, targetKey ) );
+            }
+            else
+            {
+                return SearchIndex( index, keyComparison: b => SequentialByteArrayComparer.CompareWithoutChecks( b, targetKey ) );
+            }
         }
 
         public static IEnumerable<LeafCdxKeyEntry> SearchIndex(CdxIndex index, Func<Byte[],Int32> keyComparison)
