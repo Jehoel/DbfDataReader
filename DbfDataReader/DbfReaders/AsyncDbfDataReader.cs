@@ -49,6 +49,8 @@ namespace Dbf
             this.isDisposed = true;
         }
 
+        public override Int64 CurrentOffset => this.binaryReader.BaseStream.Position;
+
         public override Boolean IsClosed => this.isDisposed;
 
         protected override Boolean Eof => this.isEof;
@@ -88,6 +90,7 @@ namespace Dbf
         {
             if( this.SetEof() ) return DbfReadResult.Eof;
 
+            Int32 recordIndex = this.GetRecordIndexFromCurrentOffset();
             Int64 offset = this.binaryReader.BaseStream.Position;
 
             DbfRecordStatus recordStatus = (DbfRecordStatus)await this.binaryReader.ReadByteAsync().ConfigureAwait(false);
@@ -105,7 +108,7 @@ namespace Dbf
 
             //////////////////////
 
-            if( await this.ReadRecordAsync( this.binaryReader, offset, recordStatus ).ConfigureAwait(false) )
+            if( await this.ReadRecordAsync( this.binaryReader, recordIndex, offset, recordStatus ).ConfigureAwait(false) )
             {
                 Int64 expectedPosition = offset + this.Table.Header.RecordLength; // offset + (record-status == 1) + (record-data)
                 Int64 actualPosition   = this.binaryReader.BaseStream.Position;
@@ -124,7 +127,7 @@ namespace Dbf
         }
 
         [CLSCompliant(false)]
-        protected virtual async Task<Boolean> ReadRecordAsync(AsyncBinaryReader reader, Int64 offset, DbfRecordStatus recordStatus)
+        protected virtual async Task<Boolean> ReadRecordAsync(AsyncBinaryReader reader, Int32 recordIndex, Int64 offset, DbfRecordStatus recordStatus)
         {
             if( reader == null ) throw new ArgumentNullException(nameof(reader));
 
@@ -147,14 +150,16 @@ namespace Dbf
                 }
             }
 
-            this.Current = new DbfRecord( this.Table, offset, recordStatus, values );
+            this.Current = new DbfRecord( this.Table, recordIndex, offset, recordStatus, values );
             return true;
         }
 
-        public override Boolean Seek(Int32 recordIndex)
+        /// <summary>Seeks to the zero-based record index. Call Read() to read the record after seeking.</summary>
+        public override Boolean Seek(Int32 zeroBasedRecordIndex)
         {
-            // Where is SeekAsync?
-            Int64 desiredOffset = this.GetRecordFileOffset( recordIndex );
+            // There is no SeekAsync: https://stackoverflow.com/questions/47986340/are-seeks-cheaper-than-reads-and-does-forward-seeking-fall-foul-of-the-sequenti
+
+            Int64 desiredOffset = this.GetRecordFileOffset( zeroBasedRecordIndex );
             Int64 currentOffset = this.binaryReader.BaseStream.Seek( desiredOffset, SeekOrigin.Begin );
             return desiredOffset == currentOffset;
         }

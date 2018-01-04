@@ -16,12 +16,14 @@ namespace Dbf
     public class DbfRecord : DbDataRecord
     {
         public DbfTable        Table  { get; }
+        /// <summary>Zero-based record index in the parent DBF file.</summary>
+        public Int32           RecordIndex { get; }
         public Int64           Offset { get; }
         public DbfRecordStatus Status { get; }
 
         private readonly Object[] values;
 
-        public DbfRecord(DbfTable table, Int64 offset, DbfRecordStatus status, Object[] values)
+        public DbfRecord(DbfTable table, Int32 recordIndex, Int64 offset, DbfRecordStatus status, Object[] values)
         {
             // NOTE: It might be an idea to create a shallow-copy of `values` in case the consumer mutates the array after construction.
 
@@ -29,10 +31,11 @@ namespace Dbf
             if( status != DbfRecordStatus.Deleted && status != DbfRecordStatus.Valid ) throw new ArgumentOutOfRangeException(nameof(status), status, "Value must be either " + nameof(DbfRecordStatus.Valid) + " or " + nameof(DbfRecordStatus.Deleted) + ".");
             if( values == null ) throw new ArgumentNullException(nameof(values));
 
-            this.Table  = table;
-            this.Offset = offset;
-            this.Status = status;
-            this.values = values;
+            this.Table       = table;
+            this.RecordIndex = recordIndex;
+            this.Offset      = offset;
+            this.Status      = status;
+            this.values      = values;
 
             if( BuildOptions.StrictChecks )
             {

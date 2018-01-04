@@ -29,6 +29,19 @@ namespace Dbf
             }
         }
 
+        public abstract Int64 CurrentOffset { get; }
+
+        protected Int32 GetRecordIndexFromCurrentOffset()
+        {
+            Int64 offsetIntoRecords = this.CurrentOffset - this.Table.Header.HeaderLength;
+                
+            Int64 mod = offsetIntoRecords % this.Table.Header.RecordLength;
+            if( mod != 0 ) throw new InvalidOperationException("Reader is not aligned with a record.");
+
+            Int64 index = offsetIntoRecords / this.Table.Header.RecordLength;
+            return (Int32)index;
+        }
+
         public override abstract void Close();
 
         #region DbDataReader
@@ -173,16 +186,16 @@ namespace Dbf
             Skipped
         }
 
-        protected Int64 GetRecordFileOffset(Int32 recordIndex)
+        protected Int64 GetRecordFileOffset(Int32 zeroBasedRecordIndex)
         {
-            if( recordIndex < 0 ) throw new ArgumentOutOfRangeException( nameof(recordIndex), recordIndex, "Value cannot be less than zero." );
+            if( zeroBasedRecordIndex < 0 ) throw new ArgumentOutOfRangeException( nameof(zeroBasedRecordIndex), zeroBasedRecordIndex, "Value cannot be less than zero." );
 
-            Int64 offset = this.Table.Header.HeaderLength + (this.Table.Header.RecordLength * recordIndex);
+            Int64 offset = this.Table.Header.HeaderLength + (this.Table.Header.RecordLength * zeroBasedRecordIndex);
             return offset;
         }
 
         // There is no async Seek method, so this is shared by both implementations.
-        public abstract Boolean Seek(Int32 recordIndex);
+        public abstract Boolean Seek(Int32 zeroBasedRecordIndex);
 
         protected abstract Boolean SetEof();
 

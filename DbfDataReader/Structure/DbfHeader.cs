@@ -13,6 +13,7 @@ namespace Dbf
         public Int32    HeaderLength { get; }
         public Int32    RecordLength { get; } // Value = (Real record length) + 1 Byte for the DbfRecordStatus.
 
+        /// <summary>Number of bytes occupied by the data portion of a row. Does not include the record status header. Do not use this value for computing offsets and record-numbers.</summary>
         public Int32    RecordDataLength => this.RecordLength - 1;
 
         public const Byte HeaderTerminator = 0x0D;

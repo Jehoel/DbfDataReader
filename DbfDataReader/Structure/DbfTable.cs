@@ -101,7 +101,7 @@ namespace Dbf
             SyncDbfDataReader reader = new SyncDbfDataReader( this, randomAccess, this.TextEncoding, options );
             try
             {
-                reader.Seek( recordIndex: 0 ); // Move to first record.
+                reader.Seek( zeroBasedRecordIndex: 0 ); // Move to first record.
                 return reader;
             }
             catch
@@ -118,7 +118,7 @@ namespace Dbf
             SubsetSyncDbfDataReader reader = new SubsetSyncDbfDataReader( this, selectColumnIndexes, randomAccess, this.TextEncoding, options );
             try
             {
-                reader.Seek( recordIndex: 0 ); // Move to first record.
+                reader.Seek( zeroBasedRecordIndex: 0 ); // Move to first record.
                 return reader;
             }
             catch
@@ -135,7 +135,7 @@ namespace Dbf
             AsyncDbfDataReader reader = new AsyncDbfDataReader( this, randomAccess, this.TextEncoding, options );
             try
             {
-                reader.Seek( recordIndex: 0 ); // Move to first record.
+                reader.Seek( zeroBasedRecordIndex: 0 ); // Move to first record.
                 return reader;
             }
             catch

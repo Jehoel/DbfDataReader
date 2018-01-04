@@ -44,6 +44,8 @@ namespace Dbf
             this.isDisposed = true;
         }
 
+        public override Int64 CurrentOffset => this.binaryReader.BaseStream.Position;
+
         public override Boolean IsClosed => this.isDisposed;
 
         protected override Boolean Eof => this.isEof;
@@ -71,6 +73,14 @@ namespace Dbf
             }
             while( result == DbfReadResult.Skipped ); // so EOF and Read won't cause a loop iteration.
 
+            //
+
+            if( result == DbfReadResult.Eof )
+            {
+                this.SetEof();
+                if( !this.Eof ) throw new InvalidOperationException("ReadImpl returned Eof, but SetEof didn't set Eof == true.");
+            }
+
             return result == DbfReadResult.Read;
         }
 
@@ -78,6 +88,7 @@ namespace Dbf
         {
             if( this.SetEof() ) return DbfReadResult.Eof;
 
+            Int32 recordIndex = this.GetRecordIndexFromCurrentOffset();
             Int64 offset = this.binaryReader.BaseStream.Position;
 
             DbfRecordStatus recordStatus = (DbfRecordStatus)this.binaryReader.ReadByte();
@@ -95,7 +106,7 @@ namespace Dbf
 
             //////////////////////
 
-            if( this.ReadRecord( this.binaryReader, offset, recordStatus ) )
+            if( this.ReadRecord( this.binaryReader, recordIndex, offset, recordStatus ) )
             {
                 Int64 expectedPosition = offset + this.Table.Header.RecordLength; // offset + (record-status == 1) + (record-data)
                 Int64 actualPosition   = this.binaryReader.BaseStream.Position;
@@ -113,7 +124,7 @@ namespace Dbf
             }
         }
 
-        protected virtual Boolean ReadRecord(BinaryReader reader, Int64 offset, DbfRecordStatus recordStatus)
+        protected virtual Boolean ReadRecord(BinaryReader reader, Int32 recordIndex, Int64 offset, DbfRecordStatus recordStatus)
         {
             if( reader == null ) throw new ArgumentNullException(nameof(reader));
 
@@ -136,13 +147,14 @@ namespace Dbf
                 }
             }
 
-            this.Current = new DbfRecord( this.Table, offset, recordStatus, values );
+            this.Current = new DbfRecord( this.Table, recordIndex, offset, recordStatus, values );
             return true;
         }
 
-        public override Boolean Seek(Int32 recordIndex)
+        /// <summary>Seeks to the zero-based record index. Call Read() to read the record after seeking.</summary>
+        public override Boolean Seek(Int32 zeroBasedRecordIndex)
         {
-            Int64 desiredOffset = this.GetRecordFileOffset( recordIndex );
+            Int64 desiredOffset = this.GetRecordFileOffset( zeroBasedRecordIndex );
             Int64 currentOffset = this.binaryReader.BaseStream.Seek( desiredOffset, SeekOrigin.Begin );
             return desiredOffset == currentOffset;
         }
@@ -169,7 +181,7 @@ namespace Dbf
             this.selectedColumnIndexen = columnIndexes;
         }
 
-        protected override Boolean ReadRecord(BinaryReader reader, Int64 offset, DbfRecordStatus recordStatus)
+        protected override Boolean ReadRecord(BinaryReader reader, Int32 recordIndex, Int64 offset, DbfRecordStatus recordStatus)
         {
             if( reader == null ) throw new ArgumentNullException(nameof(reader));
 
@@ -207,7 +219,7 @@ namespace Dbf
                 }
             }
             
-            this.Current = new DbfRecord( this.Table, offset, recordStatus, values );
+            this.Current = new DbfRecord( this.Table, recordIndex, offset, recordStatus, values );
             return true;
         }
 
