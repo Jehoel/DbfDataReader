@@ -61,7 +61,7 @@
     <Compile Include="Cdx\BaseCdxNode.cs" />
     <Compile Include="Cdx\CdxException.cs" />
     <Compile Include="Cdx\CdxFile.cs" />
-    <Compile Include="Cdx\CdxFileHeader.cs" />
+    <Compile Include="Cdx\CdxIndexHeader.cs" />
     <Compile Include="Cdx\CdxIndex.cs" />
     <Compile Include="Cdx\InteriorCdxKeyEntry.cs" />
     <Compile Include="Cdx\LeafCdxKeyEntry.cs" />
