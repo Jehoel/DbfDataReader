@@ -68,18 +68,17 @@ namespace Dbf.Cdx
             Array.Reverse( packedEntry );
 
             // Then convert to a long (assuming entries are never longer than 8 bytes):
-            Int32 z = recordLength - 1; // ( startIndex + recordLength ) - 1;
             Int32 l = recordLength;
 
             Int64 packedEntryLong_Trail_Dupe_Recno =
-                ( l > 0 ? ( packedEntry[ z - 0 ] <<  0 ) : 0 ) |
-                ( l > 1 ? ( packedEntry[ z - 1 ] <<  8 ) : 0 ) |
-                ( l > 2 ? ( packedEntry[ z - 2 ] << 16 ) : 0 ) |
-                ( l > 3 ? ( packedEntry[ z - 3 ] << 24 ) : 0 ) |
-                ( l > 4 ? ( packedEntry[ z - 4 ] << 32 ) : 0 ) |
-                ( l > 5 ? ( packedEntry[ z - 5 ] << 40 ) : 0 ) |
-                ( l > 6 ? ( packedEntry[ z - 6 ] << 48 ) : 0 ) |
-                ( l > 7 ? ( packedEntry[ z - 7 ] << 56 ) : 0 );
+                ( l > 0 ? ( (Int64)packedEntry[ l - 1 ] <<  0 ) : 0 ) |
+                ( l > 1 ? ( (Int64)packedEntry[ l - 2 ] <<  8 ) : 0 ) |
+                ( l > 2 ? ( (Int64)packedEntry[ l - 3 ] << 16 ) : 0 ) |
+                ( l > 3 ? ( (Int64)packedEntry[ l - 4 ] << 24 ) : 0 ) |
+                ( l > 4 ? ( (Int64)packedEntry[ l - 5 ] << 32 ) : 0 ) |
+                ( l > 5 ? ( (Int64)packedEntry[ l - 6 ] << 40 ) : 0 ) |
+                ( l > 6 ? ( (Int64)packedEntry[ l - 7 ] << 48 ) : 0 ) |
+                ( l > 7 ? ( (Int64)packedEntry[ l - 8 ] << 56 ) : 0 );
 
             return packedEntryLong_Trail_Dupe_Recno;
         }
