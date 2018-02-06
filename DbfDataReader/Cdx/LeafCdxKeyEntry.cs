@@ -1,4 +1,5 @@
-﻿using System;
+﻿#define BranchlessUnrolledLoop
+using System;
 using System.Diagnostics;
 using System.Text;
 
@@ -62,7 +63,93 @@ namespace Dbf.Cdx
 
         public static Int64 GetPackedEntryAsInt64(Byte[] buffer, Int32 startIndex, Int32 recordLength)
         {
-            // TODO: Find a way to reverse the bytes without needing the temporary buffer `packedEntry`.
+
+#if BranchlessUnrolledLoop
+
+            Int64 packedEntry = 0;
+            switch( recordLength )
+            {
+                case 8:
+                    packedEntry |= ( (Int64)buffer[ startIndex + 0 ] <<  0 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 1 ] <<  8 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 2 ] << 16 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 3 ] << 24 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 4 ] << 32 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 5 ] << 40 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 6 ] << 48 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 7 ] << 56 );
+                    break;
+                case 7:
+                    packedEntry |= ( (Int64)buffer[ startIndex + 0 ] <<  0 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 1 ] <<  8 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 2 ] << 16 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 3 ] << 24 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 4 ] << 32 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 5 ] << 40 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 6 ] << 48 );
+                    break;
+                case 6:
+                    packedEntry |= ( (Int64)buffer[ startIndex + 0 ] <<  0 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 1 ] <<  8 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 2 ] << 16 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 3 ] << 24 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 4 ] << 32 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 5 ] << 40 );
+                    break;
+                case 5:
+                    packedEntry |= ( (Int64)buffer[ startIndex + 0 ] <<  0 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 1 ] <<  8 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 2 ] << 16 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 3 ] << 24 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 4 ] << 32 );
+                    break;
+                case 4:
+                    packedEntry |= ( (Int64)buffer[ startIndex + 0 ] <<  0 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 1 ] <<  8 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 2 ] << 16 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 3 ] << 24 );
+                    break;
+                case 3:
+                    packedEntry |= ( (Int64)buffer[ startIndex + 0 ] <<  0 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 1 ] <<  8 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 2 ] << 16 );
+                    break;
+                case 2:
+                    packedEntry |= ( (Int64)buffer[ startIndex + 0 ] <<  0 );
+                    packedEntry |= ( (Int64)buffer[ startIndex + 1 ] <<  8 );
+                    break;
+                case 1:
+                    packedEntry |= ( (Int64)buffer[ startIndex + 0 ] <<  0 );
+                    break;
+            }
+
+            return packedEntry;
+
+#elif BranchedUnrolledLoop
+
+            // Not exactly branchless, but hopefully easy to see.
+            Int64 packedEntry = 0;
+            if( recordLength >= 1 ) packedEntry |= ( (Int64)buffer[ startIndex + 0 ] <<  0 );
+            if( recordLength >= 2 ) packedEntry |= ( (Int64)buffer[ startIndex + 1 ] <<  8 );
+            if( recordLength >= 3 ) packedEntry |= ( (Int64)buffer[ startIndex + 2 ] << 16 );
+            if( recordLength >= 4 ) packedEntry |= ( (Int64)buffer[ startIndex + 3 ] << 24 );
+            if( recordLength >= 5 ) packedEntry |= ( (Int64)buffer[ startIndex + 4 ] << 32 );
+            if( recordLength >= 6 ) packedEntry |= ( (Int64)buffer[ startIndex + 5 ] << 40 );
+            if( recordLength >= 7 ) packedEntry |= ( (Int64)buffer[ startIndex + 6 ] << 48 );
+            if( recordLength >= 8 ) packedEntry |= ( (Int64)buffer[ startIndex + 7 ] << 56 );
+
+            return packedEntry;
+
+#elif ShiftLoop
+
+            Int64 packedEntry = 0;
+            for( Int32 i = recordLength; i >= 0; i-- )
+            {
+                packedEntry = ( packedEntry << 8 ) | buffer[ startIndex + i ];
+            }
+            return packedEntry;
+
+#else
 
             Byte[] packedEntry = new Byte[ recordLength ]; // this array exists so I can see what the current window of data looks like.
             Array.Copy( buffer, startIndex, packedEntry, 0, packedEntry.Length );
@@ -84,6 +171,8 @@ namespace Dbf.Cdx
                 ( l > 7 ? ( (Int64)packedEntry[ l - 8 ] << 56 ) : 0 );
 
             return packedEntryLong_Trail_Dupe_Recno;
+
+#endif
         }
     }
 

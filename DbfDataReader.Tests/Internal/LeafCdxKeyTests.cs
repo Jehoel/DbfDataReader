@@ -1,19 +1,29 @@
 ﻿using System;
-
+using System.Diagnostics;
 using Dbf.Cdx;
 
 using Shouldly;
 
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Dbf.Tests
 {
     [Collection( "LeafCdxKey" )]
     public class LeafCdxKeyTests
     {
+        private readonly ITestOutputHelper output;
+
+        public LeafCdxKeyTests(ITestOutputHelper output)
+        {
+            this.output = output;
+        }
+
         [Fact]
         public void Should_read_packed_entries_correctly()
         {
+            Stopwatch sw = Stopwatch.StartNew();
+
             Byte[] buffer = new Byte[488];
             for( Int32 i = 0; i < buffer.Length; i++ )
             {
@@ -117,6 +127,10 @@ namespace Dbf.Tests
                 Int64 actual   = LeafCdxKeyUtility.GetPackedEntryAsInt64( buffer, 3, 4 );
                 expected.ShouldBe( actual );
             }
+
+            sw.Stop();
+            //Debug.WriteLine( sw.Elapsed );
+            this.output.WriteLine( "Test time: " + sw.ElapsedMilliseconds + "ms." );
         }
 
         /*

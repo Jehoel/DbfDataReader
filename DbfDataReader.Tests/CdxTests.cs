@@ -8,14 +8,14 @@ using Dbf.Cdx;
 
 using Xunit;
 
-namespace DbfDataReader.NetFx.Tests
+namespace Dbf.Tests
 {
     public class CdxTests
     {
         [Fact]
         public void Cdx_reader_should_read_tags_correctly()
         {
-            using( CdxFile index = CdxFile.Open( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" ) )
+            using( CdxFile index = CdxFile.Open( Path.Combine( Paths.Root3, @"CUSTOMER.CDX" ) ) )
             {
                 LeafCdxNode rootNode = (LeafCdxNode)index.RootNode;
 
@@ -49,15 +49,15 @@ namespace DbfDataReader.NetFx.Tests
 
         private static FileInfo[] _testCdxFiles = new FileInfo[]
         {
-            new FileInfo( @"C:\git\cdx\DBD-XBase\t\rooms.cdx" ),
-            new FileInfo( @"C:\git\rss\DbfDataReader\Data\CUSTOMER-dbfMan.cdx" ),
-            new FileInfo( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" ),
-            new FileInfo( @"C:\git\rss\DbfDataReader\Data\ORDER.CDX" ),
-            new FileInfo( @"C:\git\rss\DbfDataReader\Data\VEHICLE.CDX" ),
-            new FileInfo( @"C:\git\rss\DbfDataReader\DbfDataReader\DbfDataReader.Tests\TestData\foxprodb\calls.CDX" ),
-            new FileInfo( @"C:\git\rss\DbfDataReader\DbfDataReader\DbfDataReader.Tests\TestData\foxprodb\contacts.CDX" ),
-            new FileInfo( @"C:\git\rss\DbfDataReader\DbfDataReader\DbfDataReader.Tests\TestData\foxprodb\setup.CDX" ),
-            new FileInfo( @"C:\git\rss\DbfDataReader\DbfDataReader\DbfDataReader.Tests\TestData\foxprodb\types.CDX" )
+            new FileInfo( Path.Combine( Paths.Root4, @"rooms.cdx" ) ),
+            new FileInfo( Path.Combine( Paths.Root3, @"CUSTOMER-dbfMan.cdx" ) ),
+            new FileInfo( Path.Combine( Paths.Root3, @"CUSTOMER.CDX" ) ),
+            new FileInfo( Path.Combine( Paths.Root3, @"ORDER.CDX" ) ),
+            new FileInfo( Path.Combine( Paths.Root3, @"VEHICLE.CDX" ) ),
+            new FileInfo( DbaseTests.GetFullPath( @"foxprodb\calls.CDX" ) ),
+            new FileInfo( DbaseTests.GetFullPath( @"foxprodb\contacts.CDX" ) ),
+            new FileInfo( DbaseTests.GetFullPath( @"foxprodb\setup.CDX" ) ),
+            new FileInfo( DbaseTests.GetFullPath( @"foxprodb\types.CDX" ) )
         };
 
         [Fact]
@@ -131,7 +131,7 @@ namespace DbfDataReader.NetFx.Tests
         [Fact]
         public void Cdx_reader_should_work_2()
         {
-            const String prefix = @"C:\git\rss\DbfDataReader\DbfDataReader\DbfDataReader.Tests\TestData\foxprodb\";
+            String prefix = DbaseTests.GetFullPath( @"foxprodb" );
 
             var cdxFiles = new DirectoryInfo( prefix )
                 .GetFiles("*.cdx")
@@ -152,9 +152,7 @@ namespace DbfDataReader.NetFx.Tests
         [Fact]
         public void Cdx_reader_should_work_3()
         {
-            const String prefix = @"C:\git\cdx\DBD-XBase\t";
-
-            var cdxFiles = new DirectoryInfo( prefix )
+            var cdxFiles = new DirectoryInfo( Paths.Root4 )
                 .GetFiles("*.cdx")
                 .Select( fi => CdxFile.Open( fi.FullName ) )
                 .ToList();
@@ -169,7 +167,7 @@ namespace DbfDataReader.NetFx.Tests
 
             Byte[] customerKey = new Byte[] { 0x54, 0x45, 0x4D, 0x50, 0x4F, 0x52, 0x41, 0x52, 0x59 };
 
-            FileInfo customerCdxFI = new FileInfo( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" );
+            FileInfo customerCdxFI = new FileInfo( Path.Combine( Paths.Root2, "CUSTOMER.CDX" ) );
             using( CdxFile customerCdx = CdxFile.Open( customerCdxFI.FullName ) )
             {
                 var customerCdxIndexes = customerCdx.ReadTaggedIndexes();
@@ -195,7 +193,7 @@ namespace DbfDataReader.NetFx.Tests
 
             Stopwatch sw = Stopwatch.StartNew();
 
-            FileInfo customerCdxFI = new FileInfo( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" );
+            FileInfo customerCdxFI = new FileInfo( Path.Combine( Paths.Root2, "CUSTOMER.CDX" ) );
             using( CdxFile customerCdx = CdxFile.Open( customerCdxFI.FullName ) )
             {
                 var customerCdxIndexes = customerCdx.ReadTaggedIndexes();
@@ -221,7 +219,7 @@ namespace DbfDataReader.NetFx.Tests
                 TimeSpan searched1000x500 = sw.Elapsed;
                 sw.Restart();
 
-                // Results (on Dell XPS 15, 2017 model, NVMe SSD):
+                // Results (on Dell XPS 15, 2017 model, NVMe SSD) - with `GetPackedEntryAsInt64_UsingBufferReverse`
                 // 1. Native key comparison, Release build, Strict checks: 12,907.0081 ms
                 // 2. .NET key comparison, Release build, Strict checks  : 13,276.4800 ms
             }
@@ -270,8 +268,8 @@ namespace DbfDataReader.NetFx.Tests
         [Fact]
         public static void Cdx_DbfRecordNumber_values_should_be_accurate()
         {
-            FileInfo customerCdxFI = new FileInfo( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.CDX" );
-            DbfTable customerDbf = DbfTable.Open( @"C:\git\rss\DbfDataReader\Data\CUSTOMER.DBF" );
+            FileInfo customerCdxFI = new FileInfo( Path.Combine( Paths.Root2, "CUSTOMER.CDX" ) );
+            DbfTable customerDbf = DbfTable.Open( Path.Combine( Paths.Root2, "CUSTOMER.DBF" ) );
             using( SyncDbfDataReader dbfReader = customerDbf.OpenDataReader( randomAccess: false ) )
             using( CdxFile customerCdx = CdxFile.Open( customerCdxFI.FullName ) )
             {

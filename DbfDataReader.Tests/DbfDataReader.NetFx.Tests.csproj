@@ -48,6 +48,7 @@
     <Compile Include="DbfDataReaderTests.cs" />
     <Compile Include="DbfTableTests.cs" />
     <Compile Include="Internal\LeafCdxKeyTests.cs" />
+    <Compile Include="Paths.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
