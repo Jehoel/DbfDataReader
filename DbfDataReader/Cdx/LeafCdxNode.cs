@@ -86,7 +86,7 @@ namespace Dbf.Cdx
             Byte[] previousKeyData = null;
             for( Int32 i = 0; i < keyCount; i++ )
             {
-                LeafCdxKeyEntryData record = LeafCdxKeyEntryData.Read( packed, i * packedKeyEntryLength, packedKeyEntryLength, recordNumberInfo, duplicateBytesInfo, trailingBytesInfo );
+                LeafCdxKeyEntryData record = LeafCdxKeyUtility.Read( packed, i * packedKeyEntryLength, packedKeyEntryLength, recordNumberInfo, duplicateBytesInfo, trailingBytesInfo );
                 temp.Add( record );
             }
 

@@ -33,12 +33,15 @@ namespace Dbf.Cdx
         public Int32 RecordNumber   { get; }
         public Byte  DuplicateBytes { get; }
         public Byte  TrailingBytes  { get; }
+    }
 
-        public static LeafCdxKeyEntryData Read(Byte[] buffer, Int32 startIndex, Int32 recordLength, KeyComponent recordNumberInfo, KeyComponent duplicateBytesInfo, KeyComponent trailingBytesInfo)
+    public static class LeafCdxKeyUtility
+    {
+        internal static LeafCdxKeyEntryData Read(Byte[] buffer, Int32 startIndex, Int32 recordLength, KeyComponent recordNumberInfo, KeyComponent duplicateBytesInfo, KeyComponent trailingBytesInfo)
         {
             if( recordLength > 8 ) throw new CdxException( CdxErrorCode.None ); // TODO: Error code
 
-            Int64 packedEntryLong_Trail_Dupe_Recno = GetPackedEntryAsLong( buffer, startIndex, recordLength );
+            Int64 packedEntryLong_Trail_Dupe_Recno = GetPackedEntryAsInt64( buffer, startIndex, recordLength );
 
             // Then extract each component:
             // Always use 32 bits to get the record-number:
@@ -57,7 +60,7 @@ namespace Dbf.Cdx
             return record;
         }
 
-        private static Int64 GetPackedEntryAsLong(Byte[] buffer, Int32 startIndex, Int32 recordLength)
+        public static Int64 GetPackedEntryAsInt64(Byte[] buffer, Int32 startIndex, Int32 recordLength)
         {
             // TODO: Find a way to reverse the bytes without needing the temporary buffer `packedEntry`.
 

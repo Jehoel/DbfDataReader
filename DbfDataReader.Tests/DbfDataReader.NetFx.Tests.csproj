@@ -47,6 +47,7 @@
     <Compile Include="DbaseTests.cs" />
     <Compile Include="DbfDataReaderTests.cs" />
     <Compile Include="DbfTableTests.cs" />
+    <Compile Include="Internal\LeafCdxKeyTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

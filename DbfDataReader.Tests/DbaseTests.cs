@@ -1,10 +1,12 @@
-﻿using CsvHelper;
-using Shouldly;
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+
+using CsvHelper;
+
+using Shouldly;
 
 namespace Dbf.Tests
 {
